@@ -5,6 +5,9 @@ public class MemoriaPrincipal {
     int bus[] = new int[2]; //Posición 0 es el bus para datos y posición 2  bus para instrucciones
                             //Esto para manejar el acceso a memoria compartida
 
+    /**
+     * Constructor
+     */
     public MemoriaPrincipal () {
         int x = 0;
         for (int i = 0; i < 24; i++) {
