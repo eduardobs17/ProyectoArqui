@@ -7,6 +7,31 @@ import java.util.Scanner;
 
 public class Main {
 
+    public static void main(String[] argv) {
+        System.out.println("SIMULACION PROCESADOR MULTINUCLEO\n");
+
+        MemoriaPrincipal memoria = new MemoriaPrincipal();
+        Procesador procesador = new Procesador();
+        Scanner reader = new Scanner(System.in);
+        int cantHilos, quantum;
+
+        System.out.println("Digite la cantidad de hilos que desea que maneje el procesador:");
+        cantHilos = reader.nextInt();
+        System.out.println("Digite el tamaño de quantum que desea:");
+        quantum = reader.nextInt();
+
+        //System.out.println("Quantum = " + quantum);
+        Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
+
+        for (int i = 0; i < cantHilos; i++) {
+            String hilo = i + ".txt";
+            String inst = leerArchivo(hilo);
+            colaHilos.add(inst);
+            memoria.agregarInst(inst);
+        }
+
+    }
+
     /**
      * Apertura del fichero y creacion de BufferedReader para poder
      * hacer una lectura comoda (disponer del metodo readLine()).
@@ -23,11 +48,9 @@ public class Main {
             fr = new FileReader (archivo);
             br = new BufferedReader(fr);
 
-            // Lectura del fichero
             String linea;
-            while((linea = br.readLine()) != null)
-                instrucciones += linea + "\n";
-        } catch(Exception e) {
+            while((linea = br.readLine()) != null) { instrucciones += linea + "\n"; }
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             // En el finally cerramos el fichero, para asegurarnos
@@ -38,23 +61,5 @@ public class Main {
             } catch (Exception e2){ e2.printStackTrace(); }
         }
         return instrucciones;
-    }
-
-    public static void main(String[] argv) {
-        System.out.println("SIMULACION PROCESADOR MULTINUCLEO\n");
-
-        Scanner reader = new Scanner(System.in);
-        int cantHilos;
-        System.out.println("Digite la cantidad de hilos que desea que maneje el procesador: ");
-        cantHilos = reader.nextInt();
-
-        //System.out.println("CantHilos = " + cantHilos);
-        Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
-
-        for (int i = 0; i < cantHilos; i++) {
-            String hilo = i + ".txt";
-            String inst = leerArchivo(hilo);
-            colaHilos.add(inst);
-        }
     }
 }
