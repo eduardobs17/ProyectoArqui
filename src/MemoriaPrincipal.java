@@ -9,6 +9,7 @@ public class MemoriaPrincipal {
 
     /**
      * Constructor
+     * Se inicializa en unos la memoria de datos e instrucciones
      */
     public MemoriaPrincipal () {
         int x = 0;
@@ -31,11 +32,17 @@ public class MemoriaPrincipal {
         }
     }
 
-    public void agregarInst(String instrucciones) {
+    /**
+     * Metodo para agregar las instrucciones en la memoria principal de instrucciones.
+     * @param instrucciones
+     * @param h
+     */
+    public void agregarInst(String instrucciones, Hilillo h) {
         String[] inst = instrucciones.split("\n");
         for (int x = 0; x < inst.length; x++) {
             String[] comandos = inst[x].split(" ");
             for (int y = 0; y < comandos.length; y++) {
+                h.pc = memInstrucciones[iteradorBloqueInstrucciones].direccion[iteradorPalabraInstrucciones]; //ESTO SE AGREGO
                 memInstrucciones[iteradorBloqueInstrucciones].palabra[iteradorPalabraInstrucciones] = Integer.parseInt(comandos[y]);
                 iteradorPalabraInstrucciones++;
                 if (iteradorPalabraInstrucciones == 16) {
