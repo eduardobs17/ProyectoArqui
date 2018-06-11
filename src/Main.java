@@ -11,7 +11,6 @@ public class Main {
         System.out.println("SIMULACION PROCESADOR MULTINUCLEO\n");
 
         MemoriaPrincipal memoria = new MemoriaPrincipal();
-        Procesador procesador = new Procesador();
         Scanner reader = new Scanner(System.in);
         int cantHilos, quantum;
 
@@ -21,15 +20,16 @@ public class Main {
         quantum = reader.nextInt();
 
         //System.out.println("Quantum = " + quantum);
+        Procesador procesador = new Procesador(cantHilos);
         Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
 
         for (int i = 0; i < cantHilos; i++) {
             String hilo = i + ".txt";
             String inst = leerArchivo(hilo);
             colaHilos.add(inst);
-            procesador.llenarContexto(i);
             memoria.agregarInst(inst);
         }
+        procesador.run(colaHilos);
     }
 
     /**

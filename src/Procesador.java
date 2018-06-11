@@ -1,28 +1,34 @@
+import java.util.Queue;
+
 public class Procesador {
+    private int cantHilos;
     //Nucleo 0
-    Hilillo hilo0_1 = new Hilillo();
-    Hilillo hilo0_2 = new Hilillo();
+    Hilillo hilo0_1;
+    Hilillo hilo0_2;
     int cacheD0[][] = new int[6][8];
     int cacheI0[][] = new int[16][8];
 
     //Nucleo 1
-    Hilillo hilo1 = new Hilillo();
+    Hilillo hilo1;
     int cacheD1[][] = new int[6][4];
     int cacheI1[][] = new int[16][4];
 
     int ciclos_Reloj = 0;
-    int contexto[][] = new int[6][32];
+    int contexto[][];
 
     /**
      * Constructor
      * Se inicializa en ceros el contexto y las caches.
      */
-    public Procesador () {
-        /*for (int i = 0; i < 3; i++) {
+    public Procesador (int cant) {
+        cantHilos = cant;
+        contexto = new int[cantHilos][32];
+
+        for (int i = 0; i < cantHilos; i++) {
             for (int j = 0; j < 32; j++) {
                 contexto[i][j] = 0;
             }
-        }*/
+        }
         for (int i = 0; i < 6; i++) {
             for (int j = 0; j < 8; j++) {
                 cacheD0[i][j] = 0;
@@ -118,7 +124,11 @@ public class Procesador {
 
     public void llenarContexto(int fila) {
         for (int x = 0; x < 32; x++) {
-            contexto[fila][x] = 0;
+
         }
+    }
+
+    public void run(Queue<String> cola) {
+        hilo0_1 = new Hilillo(cola.poll());
     }
 }
