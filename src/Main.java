@@ -12,7 +12,7 @@ public class Main {
 
         MemoriaPrincipal memoria = new MemoriaPrincipal();
         Scanner reader = new Scanner(System.in);
-        int cantHilos, quantum;
+        int cantHilos, quantum, pc;
 
         System.out.println("Digite la cantidad de hilos que desea que maneje el procesador:");
         cantHilos = reader.nextInt();
@@ -22,14 +22,17 @@ public class Main {
         //System.out.println("Quantum = " + quantum);
         Procesador procesador = new Procesador(cantHilos);
         Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
+        Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
 
         for (int i = 0; i < cantHilos; i++) {
-            String hilo = i + ".txt";
-            String inst = leerArchivo(hilo);
+            String rutaHilo = i + ".txt";
+            String inst = leerArchivo(rutaHilo);
+            pc = memoria.agregarInst(inst);
+            procesador.llenarContextopc(i, pc);
             colaHilos.add(inst);
-            memoria.agregarInst(inst);
+            colaPCs.add(pc);
         }
-        procesador.run(colaHilos);
+        procesador.run(colaHilos, colaPCs);
     }
 
     /**

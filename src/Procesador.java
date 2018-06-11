@@ -5,13 +5,14 @@ public class Procesador {
     //Nucleo 0
     Hilillo hilo0_1;
     Hilillo hilo0_2;
-    int cacheD0[][] = new int[6][8];
-    int cacheI0[][] = new int[16][8];
+    // Caches = palabra1, palabra2, palabra3, palabra4, etiqueta, estado
+    int cacheD0[][] = new int[8][6];
+    int cacheI0[][] = new int[8][18];
 
     //Nucleo 1
     Hilillo hilo1;
-    int cacheD1[][] = new int[6][4];
-    int cacheI1[][] = new int[16][4];
+    int cacheD1[][] = new int[4][6];
+    int cacheI1[][] = new int[4][18];
 
     int ciclos_Reloj = 0;
     int contexto[][];
@@ -22,30 +23,30 @@ public class Procesador {
      */
     public Procesador (int cant) {
         cantHilos = cant;
-        contexto = new int[cantHilos][32];
+        contexto = new int[cantHilos][33];
 
         for (int i = 0; i < cantHilos; i++) {
-            for (int j = 0; j < 32; j++) {
+            for (int j = 0; j < 33; j++) {
                 contexto[i][j] = 0;
             }
         }
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 8; j++) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 6; j++) {
                 cacheD0[i][j] = 0;
             }
         }
-        for (int i = 0; i < 16; i++) {
-            for (int j = 0; j < 8; j++) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 18; j++) {
                 cacheI0[i][j] = 0;
             }
         }
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 4; j++) {
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 6; j++) {
                 cacheD1[i][j] = 0;
             }
         }
-        for (int i = 0; i < 16; i++) {
-            for (int j = 0; j < 4; j++) {
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 18; j++) {
                 cacheI1[i][j] = 0;
             }
         }
@@ -93,10 +94,10 @@ public class Procesador {
                 h.registro[instruccion[1]] = h.registro[instruccion[2]] - h.registro[instruccion[3]];
                 break;
             case 35: //LW
-                load(instruccion, h);
+                loadD(instruccion, h);
                 break;
             case 43: //SW
-                store(instruccion, h);
+                storeD(instruccion, h);
                 break;
             case 63: //FIN
                 break;
@@ -109,7 +110,7 @@ public class Procesador {
      * @param instruccion
      * @param h
      */
-    public void load (int instruccion[], Hilillo h) {
+    public void loadD (int instruccion[], Hilillo h) {
         
     }
 
@@ -118,17 +119,54 @@ public class Procesador {
      * @param instruccion
      * @param h
      */
-    public void store (int instruccion[], Hilillo h) {
+    public void storeD (int instruccion[], Hilillo h) {
 
     }
 
-    public void llenarContexto(int fila) {
-        for (int x = 0; x < 32; x++) {
+    /**
+     * Metodo para guardar de memoria a registro
+     * @param instruccion
+     * @param h
+     */
+    public void loadI (int instruccion[], Hilillo h) {
 
+    }
+
+    public void llenarContextopc(int fila, int valor) {
+        contexto[fila][32] = valor;
+    }
+
+    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs) {
+        hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll());
+        buscarInstruccionEnCache(hilo0_1.pc, 0);
+    }
+
+    /**
+     * 0 = invalido
+     * 1 = compartido
+     * 2 = modificado
+     * @param pc
+     * @param nucleo
+     * @return
+     */
+    private boolean buscarInstruccionEnCache(int pc, int nucleo) {
+        int bloque = pc / 16;
+        int posCache;
+        if (nucleo == 0) { //Busca en cache del nucleo 0
+            posCache = bloque % 8;
+            if (cacheI0[posCache][16] == bloque) { // Revisa etiqueta
+                if (cacheI0[posCache][17] != 0) {
+                    return true;
+                }
+            }
+        } else {
+            posCache = bloque % 4;
+            if (cacheI1[posCache][4] == bloque) { // Revisa etiqueta
+                if (cacheI1[posCache][5] != 0) {
+                    return true;
+                }
+            }
         }
-    }
-
-    public void run(Queue<String> cola) {
-        hilo0_1 = new Hilillo(cola.poll());
+        return false;
     }
 }

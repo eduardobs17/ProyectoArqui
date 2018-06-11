@@ -36,7 +36,8 @@ public class MemoriaPrincipal {
      * Metodo para agregar las instrucciones en la memoria principal de instrucciones.
      * @param instrucciones
      */
-    public void agregarInst(String instrucciones) {
+    public int agregarInst(String instrucciones) {
+        int valorRetorno = memInstrucciones[iteradorBloqueInstrucciones].direccion[0];
         String[] inst = instrucciones.split("\n");
         for (int x = 0; x < inst.length; x++) {
             String[] comandos = inst[x].split(" ");
@@ -49,5 +50,6 @@ public class MemoriaPrincipal {
                 }
             }
         }
+        return valorRetorno;
     }
 }
