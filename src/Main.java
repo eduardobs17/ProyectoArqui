@@ -27,9 +27,9 @@ public class Main {
             String hilo = i + ".txt";
             String inst = leerArchivo(hilo);
             colaHilos.add(inst);
+            procesador.llenarContexto(i);
             memoria.agregarInst(inst);
         }
-
     }
 
     /**
@@ -37,7 +37,7 @@ public class Main {
      * hacer una lectura comoda (disponer del metodo readLine()).
      * @param rutaArchivo
      */
-    public static String leerArchivo(String rutaArchivo) {
+    private static String leerArchivo(String rutaArchivo) {
         String instrucciones = "";
         File archivo;
         FileReader fr = null;
@@ -53,11 +53,8 @@ public class Main {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            // En el finally cerramos el fichero, para asegurarnos
-            // que se cierra tanto si todo va bien como si salta
-            // una excepcion.
             try {
-                if( null != fr ){ fr.close(); }
+                if ( null != fr ) { fr.close(); }
             } catch (Exception e2){ e2.printStackTrace(); }
         }
         return instrucciones;

@@ -5,26 +5,24 @@ public class Procesador {
     int cacheD0[][] = new int[6][8];
     int cacheI0[][] = new int[16][8];
 
-
     //Nucleo 1
     Hilillo hilo1 = new Hilillo();
     int cacheD1[][] = new int[6][4];
     int cacheI1[][] = new int[16][4];
 
-
     int ciclos_Reloj = 0;
-    int contexto[][] = new int[3][32];
+    int contexto[][] = new int[6][32];
 
     /**
      * Constructor
      * Se inicializa en ceros el contexto y las caches.
      */
     public Procesador () {
-        for (int i = 0; i < 3; i++) {
+        /*for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 32; j++) {
                 contexto[i][j] = 0;
             }
-        }
+        }*/
         for (int i = 0; i < 6; i++) {
             for (int j = 0; j < 8; j++) {
                 cacheD0[i][j] = 0;
@@ -78,7 +76,9 @@ public class Procesador {
                 h.registro[instruccion[1]] = h.registro[instruccion[2]] * h.registro[instruccion[3]];
                 break;
             case 14: //DDIV
-                h.registro[instruccion[1]] = h.registro[instruccion[2]] / h.registro[instruccion[3]];
+                if (instruccion[3] != 0) {
+                    h.registro[instruccion[1]] = h.registro[instruccion[2]] / h.registro[instruccion[3]];
+                }
                 break;
             case 32: //DADD
                 h.registro[instruccion[1]] = h.registro[instruccion[2]] + h.registro[instruccion[3]];
@@ -93,9 +93,9 @@ public class Procesador {
                 store(instruccion, h);
                 break;
             case 63: //FIN
-
                 break;
         }
+        ciclos_Reloj++;
     }
 
     /**
@@ -114,5 +114,11 @@ public class Procesador {
      */
     public void store (int instruccion[], Hilillo h) {
 
+    }
+
+    public void llenarContexto(int fila) {
+        for (int x = 0; x < 32; x++) {
+            contexto[fila][x] = 0;
+        }
     }
 }
