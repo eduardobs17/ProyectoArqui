@@ -1,28 +1,29 @@
 import java.util.Queue;
 
 public class Procesador {
-    private int cantHilos;
+    private final int cantHilos, quantum;
     //Nucleo 0
-    Hilillo hilo0_1;
-    Hilillo hilo0_2;
+    private Thread hilo0_1 = null;
+    Thread hilo0_2 = null;
     // Caches = palabra1, palabra2, palabra3, palabra4, etiqueta, estado
-    int cacheD0[][] = new int[8][6];
-    int cacheI0[][] = new int[8][18];
+    public int cacheD0[][] = new int[8][6];
+    public int cacheI0[][] = new int[8][18];
 
     //Nucleo 1
-    Hilillo hilo1;
-    int cacheD1[][] = new int[4][6];
-    int cacheI1[][] = new int[4][18];
+    private Thread hilo1 = null;
+    public int cacheD1[][] = new int[4][6];
+    public int cacheI1[][] = new int[4][18];
 
-    int ciclos_Reloj = 0;
-    int contexto[][];
+    private int ciclos_Reloj = 0;
+    private int contexto[][];
 
     /**
      * Constructor
      * Se inicializa en ceros el contexto y las caches.
      */
-    public Procesador (int cant) {
+    Procesador(int cant, int tamQuantum) {
         cantHilos = cant;
+        quantum = tamQuantum;
         contexto = new int[cantHilos][33];
 
         for (int i = 0; i < cantHilos; i++) {
@@ -125,20 +126,24 @@ public class Procesador {
 
     /**
      * Metodo para guardar de memoria a registro
-     * @param instruccion
-     * @param h
      */
-    public void loadI (int instruccion[], Hilillo h) {
-
-    }
+    public void loadI () { }
 
     public void llenarContextopc(int fila, int valor) {
         contexto[fila][32] = valor;
     }
 
     public void run(Queue<String> colaHilos, Queue<Integer> colaPCs) {
-        hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll());
-        buscarInstruccionEnCache(hilo0_1.pc, 0);
+        if (!colaHilos.isEmpty()) {
+            Hilillo hilillo01 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, this);
+            hilo0_1 =  new Thread(hilillo01);
+        }
+        if (!colaHilos.isEmpty()) {
+            Hilillo hilillo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, this);
+            hilo1 =  new Thread(hilillo1);
+        }
+        if (hilo0_1 != null) { hilo0_1.run(); }
+        if (hilo1 != null) { hilo1.run(); }
     }
 
     /**

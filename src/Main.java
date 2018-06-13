@@ -6,7 +6,6 @@ import java.util.Queue;
 import java.util.Scanner;
 
 public class Main {
-
     public static void main(String[] argv) {
         System.out.println("SIMULACION PROCESADOR MULTINUCLEO\n");
 
@@ -19,8 +18,7 @@ public class Main {
         System.out.println("Digite el tamaño de quantum que desea:");
         quantum = reader.nextInt();
 
-        //System.out.println("Quantum = " + quantum);
-        Procesador procesador = new Procesador(cantHilos);
+        Procesador procesador = new Procesador(cantHilos, quantum);
         Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
         Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
 
