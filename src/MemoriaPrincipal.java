@@ -2,8 +2,7 @@ public class MemoriaPrincipal {
 
     private BloqueD memDatos[] = new BloqueD[24];
     private BloqueI memInstrucciones[] = new BloqueI[40];
-    int bus[] = new int[2]; //Posición 0 es el bus para datos y posición 2  bus para instrucciones
-                            //Esto para manejar el acceso a memoria compartida
+
     private int iteradorBloqueInstrucciones = 0;
     private int iteradorPalabraInstrucciones = 0;
 
@@ -51,5 +50,12 @@ public class MemoriaPrincipal {
             }
         }
         return valorRetorno;
+    }
+
+    //Se escribe en memoria
+    public void guardarBloqueInst(int[] bloque, int pos) {
+        for (int mf = 0; mf < 16; mf++) {
+            memInstrucciones[pos].palabra[mf] = bloque[mf];
+        }
     }
 }
