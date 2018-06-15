@@ -58,7 +58,6 @@ public class Procesador {
 
     /**
      * Este método manejará las instrucciones y su codificación
-     * @param instruccion
      */
     public int ALU (int instruccion[], Hilillo h) {
         int y = instruccion[0];
@@ -112,8 +111,6 @@ public class Procesador {
 
     /**
      * Metodo para guardar de memoria a registro
-     * @param instruccion
-     * @param h
      */
     public void loadD (int instruccion[], Hilillo h) {
         
