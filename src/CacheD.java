@@ -1,9 +1,10 @@
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 class CacheD {
     private int[][] valores;
     private boolean[] reservado;
-    private ReentrantLock[] locks;
+    private Lock[] locks;
 
     CacheD(int nucleo) {
         if (nucleo == 0) {

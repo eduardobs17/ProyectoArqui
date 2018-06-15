@@ -42,11 +42,25 @@ public class Procesador {
         }
     }
 
+    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs) {
+        if (!colaHilos.isEmpty()) {
+            Hilillo hilillo01 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, this);
+            hilo0_1 =  new Thread(hilillo01);
+            hilo0_1.start();
+        }
+
+        if (!colaHilos.isEmpty()) {
+            Hilillo hilillo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, this);
+            hilo1 =  new Thread(hilillo1);
+            hilo1.start();
+        }
+    }
+
     /**
      * Este método manejará las instrucciones y su codificación
      * @param instruccion
      */
-    public void ALU (int instruccion[], Hilillo h) {
+    public int ALU (int instruccion[], Hilillo h) {
         int y = instruccion[0];
         switch (y) {
             case 2: //JR
@@ -57,31 +71,31 @@ public class Procesador {
                 h.pc = h.pc + instruccion[3];
                 break;
             case 4: //BEQZ
-                if (instruccion[1] == 0) {
+                if (h.registro[instruccion[1]] == 0) {
                     h.pc = h.pc + (4 * instruccion[3]);
                 }
                 break;
             case 5: //BNEZ
-                if (instruccion[1] != 0) {
+                if (h.registro[instruccion[1]] != 0) {
                     h.pc = h.pc + (4 * instruccion[3]);
                 }
                 break;
             case 8: //DADDI
-                h.registro[instruccion[1]] = h.registro[instruccion[2]] + instruccion[3];
+                h.registro[instruccion[2]] = h.registro[instruccion[1]] + instruccion[3];
                 break;
             case 12: //DMUL
-                h.registro[instruccion[1]] = h.registro[instruccion[2]] * h.registro[instruccion[3]];
+                h.registro[instruccion[3]] = h.registro[instruccion[1]] * h.registro[instruccion[2]];
                 break;
             case 14: //DDIV
-                if (instruccion[3] != 0) {
-                    h.registro[instruccion[1]] = h.registro[instruccion[2]] / h.registro[instruccion[3]];
+                if (instruccion[2] != 0) {
+                    h.registro[instruccion[3]] = h.registro[instruccion[1]] / h.registro[instruccion[2]];
                 }
                 break;
             case 32: //DADD
-                h.registro[instruccion[1]] = h.registro[instruccion[2]] + h.registro[instruccion[3]];
+                h.registro[instruccion[3]] = h.registro[instruccion[1]] + h.registro[instruccion[2]];
                 break;
             case 34: //DSUB
-                h.registro[instruccion[1]] = h.registro[instruccion[2]] - h.registro[instruccion[3]];
+                h.registro[instruccion[3]] = h.registro[instruccion[1]] - h.registro[instruccion[2]];
                 break;
             case 35: //LW
                 loadD(instruccion, h);
@@ -90,9 +104,10 @@ public class Procesador {
                 storeD(instruccion, h);
                 break;
             case 63: //FIN
-                break;
+                return 0;
         }
         ciclosReloj++;
+        return 1;
     }
 
     /**
@@ -114,28 +129,27 @@ public class Procesador {
     }
 
     /**
-     * Metodo para guardar de memoria a registro
+     * Metodo para guardar de memoria a cache
      */
-    public void loadI (int nucleo, int posCache, int posMem, Hilillo h) {
-        //Se revisa si la posicion de cache ya está reservada
-        if (!cacheInstrucciones[nucleo].reservado[posCache]) {
+    public void loadI (int nucleo, int posCache, int posMem) {
+        int bloqueMem = posMem / 16;
+        int bloqueEnMemoria = bloqueMem - 24;
+
+        if (!cacheInstrucciones[nucleo].reservado[posCache]) { //Se revisa si la posicion de cache ya está reservada
             cacheInstrucciones[nucleo].reservado[posCache] = true;
 
-            //Se revisa bloque victima
-            if (cacheInstrucciones[nucleo].valores[posCache][17] == 2) {
+            if (cacheInstrucciones[nucleo].valores[posCache][17] == 2) { //Se revisa bloque victima
                 if (!bus[1].isLocked()) {
                     bus[1].tryLock();
                     cacheInstrucciones[nucleo].locks[posCache].tryLock();
 
-                    try {
-                        //Se guarda el bloque en memoria
-                        int[] bloque = new int[16];
+                    try { //Se guarda el bloque en memoria
                         for (int mf = 0; mf < 16; mf++) {
-                            bloque[mf] = cacheInstrucciones[nucleo].valores[posCache][mf];
+                            memoria.memInstrucciones[bloqueEnMemoria].palabra[mf] = cacheInstrucciones[nucleo].valores[posCache][mf];
                         }
-                        memoria.guardarBloqueInst(bloque, posMem);
+                        cacheInstrucciones[nucleo].valores[posCache][17] = 1;
                         for (int mf = 0; mf < 40; mf++) {
-                            h.ciclosReloj++;
+                            //h.ciclosReloj++;
 
                             //Se aumentan los 40 ciclos de reloj
                         }
@@ -145,24 +159,31 @@ public class Procesador {
                     }
                 }
             }
+
+            if (!bus[1].isLocked()) {
+                bus[1].lock();
+                cacheInstrucciones[nucleo].locks[posCache].lock();
+
+                try {
+                    for (int mf = 0; mf < 16; mf++) {
+                        cacheInstrucciones[nucleo].valores[posCache][mf] = memoria.memInstrucciones[bloqueEnMemoria].palabra[mf];
+                    }
+                    cacheInstrucciones[nucleo].valores[posCache][16] = bloqueMem;
+                    for (int mf = 0; mf < 40; mf++) {
+                        //h.ciclosReloj++;
+                        //Se aumentan los 40 ciclos de reloj
+                    }
+                    cacheInstrucciones[nucleo].valores[posCache][17] = 1;
+                } finally {
+                    bus[1].unlock();
+                    cacheInstrucciones[nucleo].locks[posCache].unlock();
+                }
+            }
         }
     }
 
     public void llenarContextopc(int fila, int valor) {
         contexto[fila][32] = valor;
-    }
-
-    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs) {
-        if (!colaHilos.isEmpty()) {
-            Hilillo hilillo01 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, this);
-            hilo0_1 =  new Thread(hilillo01);
-        }
-        if (!colaHilos.isEmpty()) {
-            Hilillo hilillo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, this);
-            hilo1 =  new Thread(hilillo1);
-        }
-        if (hilo0_1 != null) { hilo0_1.run(); }
-        if (hilo1 != null) { hilo1.run(); }
     }
 
     /**

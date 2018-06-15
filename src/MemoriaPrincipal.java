@@ -1,7 +1,7 @@
 public class MemoriaPrincipal {
 
-    private BloqueD memDatos[] = new BloqueD[24];
-    private BloqueI memInstrucciones[] = new BloqueI[40];
+    public BloqueD memDatos[] = new BloqueD[24];
+    public BloqueI memInstrucciones[] = new BloqueI[40];
 
     private int iteradorBloqueInstrucciones = 0;
     private int iteradorPalabraInstrucciones = 0;

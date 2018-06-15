@@ -1,8 +1,9 @@
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 class CacheI {
     public int[][] valores;
-    public ReentrantLock[] locks;
+    public Lock[] locks;
     public boolean[] reservado;
 
     CacheI(int nucleo) {
