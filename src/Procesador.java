@@ -2,6 +2,8 @@ import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Procesador {
+    private static Procesador procesador;
+
     private int ciclosReloj = 0;
     private final int cantHilos, quantum;
     private MemoriaPrincipal memoria;
@@ -9,8 +11,8 @@ public class Procesador {
     private int contexto[][];
     public CacheD[] cacheDatos = new CacheD[2];
     public CacheI[] cacheInstrucciones = new CacheI[2];
-    private ReentrantLock bus[] = new ReentrantLock[2]; //Posición 0 es el bus para datos
-                                                        //Posición 1 bus para instrucciones
+    private ReentrantLock lockI = new ReentrantLock();
+    private ReentrantLock lockD = new ReentrantLock();
 
     private Thread hilo0_1 = null;
     private Thread hilo0_2 = null;
@@ -20,13 +22,10 @@ public class Procesador {
      * Constructor
      * Se inicializa en ceros el contexto y las caches.
      */
-    Procesador(int cant, int tamQuantum, MemoriaPrincipal m) {
-        memoria = m;
+    private Procesador(int cant, int tamQuantum) {
+        memoria = MemoriaPrincipal.getInstancia();
         cantHilos = cant;
         quantum = tamQuantum;
-
-        bus[0] = new ReentrantLock();
-        bus[1] = new ReentrantLock();
 
         cacheDatos[0] = new CacheD(0);
         cacheDatos[1] = new CacheD(1);
@@ -42,17 +41,34 @@ public class Procesador {
         }
     }
 
-    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs) {
-        if (!colaHilos.isEmpty()) {
-            Hilillo hilillo01 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, this);
-            hilo0_1 =  new Thread(hilillo01);
-            hilo0_1.start();
+    public static Procesador getInstancia(int cantH, int tamQ) {
+        if (procesador == null) {
+            procesador = new Procesador(cantH, tamQ);
         }
+        return procesador;
+    }
 
-        if (!colaHilos.isEmpty()) {
-            Hilillo hilillo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, this);
-            hilo1 =  new Thread(hilillo1);
-            hilo1.start();
+    @Override
+    public Procesador clone() {
+        try {
+            throw new CloneNotSupportedException();
+        } catch (CloneNotSupportedException ignored) { }
+        return null;
+    }
+
+    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs) {
+        while (!colaHilos.isEmpty()) {
+            if (!colaHilos.isEmpty()) {
+                Hilillo hilillo01 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0);
+                hilo0_1 =  new Thread(hilillo01);
+                hilo0_1.start();
+            }
+
+            if (!colaHilos.isEmpty()) {
+                Hilillo hilillo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1);
+                hilo1 =  new Thread(hilillo1);
+                hilo1.start();
+            }
         }
     }
 
@@ -358,8 +374,8 @@ public class Procesador {
             cacheInstrucciones[nucleo].reservado[posCache] = true;
 
             if (cacheInstrucciones[nucleo].valores[posCache][17] == 2) { //Se revisa bloque victima
-                if (!bus[1].isLocked()) {
-                    bus[1].tryLock();
+                if (!lockI.isLocked()) {
+                    lockI.tryLock();
                     cacheInstrucciones[nucleo].locks[posCache].tryLock();
 
                     try { //Se guarda el bloque en memoria
@@ -373,14 +389,14 @@ public class Procesador {
                             //Se aumentan los 40 ciclos de reloj
                         }
                     } finally {
-                        bus[1].unlock();
+                        lockI.unlock();
                         cacheInstrucciones[nucleo].locks[posCache].unlock();
                     }
                 }
             }
 
-            if (!bus[1].isLocked()) {
-                bus[1].lock();
+            if (!lockI.isLocked()) {
+                lockI.lock();
                 cacheInstrucciones[nucleo].locks[posCache].lock();
 
                 try {
@@ -394,7 +410,7 @@ public class Procesador {
                     }
                     cacheInstrucciones[nucleo].valores[posCache][17] = 1;
                 } finally {
-                    bus[1].unlock();
+                    lockI.unlock();
                     cacheInstrucciones[nucleo].locks[posCache].unlock();
                 }
             }

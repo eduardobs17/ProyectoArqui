@@ -6,11 +6,13 @@ public class MemoriaPrincipal {
     private int iteradorBloqueInstrucciones = 0;
     private int iteradorPalabraInstrucciones = 0;
 
+    private static MemoriaPrincipal memoria;
+
     /**
      * Constructor
      * Se inicializa en unos la memoria de datos e instrucciones
      */
-    public MemoriaPrincipal () {
+    private MemoriaPrincipal () {
         int x = 0;
         for (int i = 0; i < 24; i++) {
             memDatos[i] = new BloqueD();
@@ -29,6 +31,21 @@ public class MemoriaPrincipal {
                 x++;
             }
         }
+    }
+
+    public static MemoriaPrincipal getInstancia() {
+        if (memoria == null) {
+            memoria = new MemoriaPrincipal();
+        }
+        return memoria;
+    }
+
+    @Override
+    public MemoriaPrincipal clone() {
+        try {
+            throw new CloneNotSupportedException();
+        } catch (CloneNotSupportedException ignored) { }
+        return null;
     }
 
     /**
@@ -50,12 +67,5 @@ public class MemoriaPrincipal {
             }
         }
         return valorRetorno;
-    }
-
-    //Se escribe en memoria
-    public void guardarBloqueInst(int[] bloque, int pos) {
-        for (int mf = 0; mf < 16; mf++) {
-            memInstrucciones[pos].palabra[mf] = bloque[mf];
-        }
     }
 }

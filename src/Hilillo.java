@@ -10,11 +10,11 @@ public class Hilillo implements Runnable {
     public int ciclosReloj;
     public int quantum = 0;
 
-    Hilillo(String inst, int pcHilillo, int pNucleo, Procesador p) {
+    Hilillo(String inst, int pcHilillo, int pNucleo) {
         cantInst = inst.split("\n").length;
         pc = pcHilillo;
         nucleo = pNucleo;
-        procesador = p;
+        procesador = Procesador.getInstancia(1,5);
         ciclosReloj = 0;
     }
 
@@ -22,7 +22,7 @@ public class Hilillo implements Runnable {
     public void run() {
         int bloque, posCacheI, estado = 1, numPalabra;
 
-        System.out.println("Hola, soy hilo " + nucleo);
+        //System.out.println("Hola, soy hilo " + nucleo);
 
         while (estado != 0) {
             bloque = pc / 16;
