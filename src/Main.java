@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] argv) {
         System.out.println("SIMULACION PROCESADOR MULTINUCLEO\n");
 
-        MemoriaPrincipal memoria = new MemoriaPrincipal();
+        MemoriaPrincipal memoria = MemoriaPrincipal.getInstancia();
         Scanner reader = new Scanner(System.in);
         int cantHilos, quantum, pc;
 
@@ -18,7 +18,7 @@ public class Main {
         System.out.println("Digite el tamaño de quantum que desea:");
         quantum = reader.nextInt();
 
-        Procesador procesador = new Procesador(cantHilos, quantum, memoria);
+        Procesador procesador = Procesador.getInstancia(cantHilos, quantum);
         Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
         Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
 
