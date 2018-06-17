@@ -1,6 +1,6 @@
 public class Hilillo implements Runnable {
     private Procesador procesador;
-    private int nucleo, cantInst;
+    public int nucleo, cantInst;
 
     public int[] registro = new int[32];
     private int[] IR = new int[4];
@@ -44,7 +44,7 @@ public class Hilillo implements Runnable {
         }
     }
 
-    private int calcularPosCache(int numeroBloque, int nucleo) {
+    public int calcularPosCache(int numeroBloque, int nucleo) {
         if (nucleo == 0) {
             return numeroBloque % 8;
         } else {
