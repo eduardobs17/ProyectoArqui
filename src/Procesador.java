@@ -148,9 +148,9 @@ public class Procesador {
             cacheDatos[h.nucleo].reservado[posCache] = true;
             if (cacheDatos[h.nucleo].valores[posCache][4] == bloque) { //Revisa si esta en esa cache
                 if (cacheDatos[h.nucleo].valores[posCache][5] == 2) { //Revisa si esta modificado
-                    if (!bus[0].isLocked()) {
+                    if (!lockD.isLocked()) {
                         try {
-                            bus[0].tryLock();
+                            lockD.tryLock();
                             cacheDatos[h.nucleo].locks[posCache].tryLock();
                             for (int i = 0; i < 4; i++) { //Se escribe en memoria
                                 memoria.memDatos[bloque].palabra[i] = cacheDatos[h.nucleo].valores[bloque][i];
@@ -162,7 +162,7 @@ public class Procesador {
                             }
                         }
                         finally {
-                            bus[0].unlock();
+                            lockD.unlock();
                             cacheDatos[h.nucleo].locks[posCache].unlock();
                         }
                     }
@@ -173,9 +173,9 @@ public class Procesador {
                         if (cacheDatos[1].valores[posCache][4] == bloque) { //Revisa si esta en la otra cache
                             cacheDatos[1].locks[posCache].tryLock();
                             if (cacheDatos[1].valores[posCache][5] == 2) { //Revisa si esta modificado
-                                if (!bus[0].isLocked()) { //Bus disponible
+                                if (!lockD.isLocked()) { //Bus disponible
                                     try {
-                                        bus[0].tryLock();
+                                        lockD.tryLock();
                                         for (int i = 0; i < 4; i++) { //Se escribe en memoria
                                             memoria.memDatos[bloque].palabra[i] = cacheDatos[1].valores[bloque][i];
                                         }
@@ -186,7 +186,7 @@ public class Procesador {
                                         }
                                     }
                                     finally {
-                                        bus[0].unlock();
+                                        lockD.unlock();
                                         cacheDatos[1].locks[posCache].unlock();
                                     }
                                 }
@@ -209,9 +209,9 @@ public class Procesador {
                         if (cacheDatos[0].valores[posCache][4] == bloque) { //Revisa si esta en la otra cache
                             cacheDatos[0].locks[posCache].tryLock();
                             if (cacheDatos[0].valores[posCache][5] == 2) { //Revisa si esta modificado
-                                if (!bus[0].isLocked()) {
+                                if (!lockD.isLocked()) {
                                     try {
-                                        bus[0].tryLock();
+                                        lockD.tryLock();
                                         for (int i = 0; i < 4; i++) { //Se escribe en memoria
                                             memoria.memDatos[bloque].palabra[i] = cacheDatos[0].valores[bloque][i];
                                         }
@@ -222,7 +222,7 @@ public class Procesador {
                                         }
                                     }
                                     finally {
-                                        bus[0].unlock();
+                                        lockD.unlock();
                                         cacheDatos[0].locks[posCache].unlock();
                                     }
                                 }
@@ -256,9 +256,9 @@ public class Procesador {
                     if (cacheDatos[1].valores[posCache][4] == bloque) {
                         cacheDatos[1].locks[posCache].tryLock();
                         if (cacheDatos[1].valores[posCache][5] == 2) { //Revisa si esta modificado
-                            if (!bus[0].isLocked()) {
+                            if (!lockD.isLocked()) {
                                 try {
-                                    bus[0].tryLock();
+                                    lockD.tryLock();
                                     for (int i = 0; i < 4; i++) { //Se escribe en memoria
                                         memoria.memDatos[bloque].palabra[i] = cacheDatos[1].valores[bloque][i];
                                     }
@@ -272,7 +272,7 @@ public class Procesador {
                                     }
                                 }
                                 finally {
-                                    bus[0].unlock();
+                                    lockD.unlock();
                                     cacheDatos[1].locks[posCache].unlock();
                                 }
                             }
@@ -305,9 +305,9 @@ public class Procesador {
                         if (cacheDatos[0].valores[posCache][4] == bloque) {
                             cacheDatos[0].locks[posCache].tryLock();
                             if (cacheDatos[0].valores[posCache][5] == 2) { //Revisa si esta modificado
-                                if (!bus[0].isLocked()) {
+                                if (!lockD.isLocked()) {
                                     try {
-                                        bus[0].tryLock();
+                                        lockD.tryLock();
                                         for (int i = 0; i < 4; i++) { //Se escribe en memoria
                                             memoria.memDatos[bloque].palabra[i] = cacheDatos[0].valores[bloque][i];
                                         }
@@ -321,7 +321,7 @@ public class Procesador {
                                         }
                                     }
                                     finally {
-                                        bus[0].unlock();
+                                        lockD.unlock();
                                         cacheDatos[0].locks[posCache].unlock();
                                     }
                                 }
