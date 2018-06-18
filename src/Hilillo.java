@@ -1,6 +1,7 @@
-public class Hilillo implements Runnable {
+public class Hilillo extends Thread {
     private Procesador procesador;
-    public int nucleo, cantInst;
+    private int nucleo, cantInst;
+    private String instrucciones;
 
     public int[] registro = new int[32];
     private int[] IR = new int[4];
@@ -18,13 +19,12 @@ public class Hilillo implements Runnable {
         ciclosReloj = 0;
     }
 
+    @Override
     //Lo primero que hace cada hilillo es leer la primera instrucción. Una vez hecho, la ejecuta
     public void run() {
-        int bloque, posCacheI, estado = 1, numPalabra;
+        int bloque, posCacheI, estadoHilillo = 1, numPalabra;
 
-        //System.out.println("Hola, soy hilo " + nucleo);
-
-        while (estado != 0) {
+        while (estadoHilillo != 0) {
             bloque = pc / 16;
             numPalabra = pc - (bloque*16);
             posCacheI = calcularPosCache(bloque, nucleo);
@@ -40,11 +40,12 @@ public class Hilillo implements Runnable {
                 pc++;
                 numPalabra++;
             }
-            estado = procesador.ALU(IR, this);
+            estadoHilillo = procesador.ALU(IR, this);
+            ciclosReloj++;
         }
     }
 
-    public int calcularPosCache(int numeroBloque, int nucleo) {
+    private int calcularPosCache(int numeroBloque, int nucleo) {
         if (nucleo == 0) {
             return numeroBloque % 8;
         } else {

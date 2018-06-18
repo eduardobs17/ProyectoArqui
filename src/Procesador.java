@@ -4,19 +4,19 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Procesador {
     private static Procesador procesador;
 
-    private int ciclosReloj = 0;
-    private final int cantHilos, quantum;
     private MemoriaPrincipal memoria;
+
+    private Hilillo hilo0_1 = null;
+    private Hilillo hilo0_2 = null;
+    private Hilillo hilo1 = null;
+
+    private final int cantHilos, quantum;
 
     private int contexto[][];
     public CacheD[] cacheDatos = new CacheD[2];
     public CacheI[] cacheInstrucciones = new CacheI[2];
-    private ReentrantLock lockI = new ReentrantLock();
-    private ReentrantLock lockD = new ReentrantLock();
-
-    private Thread hilo0_1 = null;
-    private Thread hilo0_2 = null;
-    private Thread hilo1 = null;
+    private ReentrantLock busI = new ReentrantLock();
+    private ReentrantLock busD = new ReentrantLock();
 
     /**
      * Constructor
@@ -59,14 +59,12 @@ public class Procesador {
     public void run(Queue<String> colaHilos, Queue<Integer> colaPCs) {
         while (!colaHilos.isEmpty()) {
             if (!colaHilos.isEmpty()) {
-                Hilillo hilillo01 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0);
-                hilo0_1 =  new Thread(hilillo01);
+                hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0);
                 hilo0_1.start();
             }
 
             if (!colaHilos.isEmpty()) {
-                Hilillo hilillo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1);
-                hilo1 =  new Thread(hilillo1);
+                hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1);
                 hilo1.start();
             }
         }
@@ -129,7 +127,6 @@ public class Procesador {
             case 63: //FIN
                 return 0;
         }
-        ciclosReloj++;
         return 1;
     }
 
@@ -366,16 +363,17 @@ public class Procesador {
     /**
      * Metodo para guardar de memoria a cache
      */
-    public void loadI (int nucleo, int posCache, int posMem) {
+    public int loadI (int nucleo, int posCache, int posMem/*, Hilillo h*/) {
         int bloqueMem = posMem / 16;
         int bloqueEnMemoria = bloqueMem - 24;
+        int resultado = -1;
 
         if (!cacheInstrucciones[nucleo].reservado[posCache]) { //Se revisa si la posicion de cache ya está reservada
             cacheInstrucciones[nucleo].reservado[posCache] = true;
 
             if (cacheInstrucciones[nucleo].valores[posCache][17] == 2) { //Se revisa bloque victima
-                if (!lockI.isLocked()) {
-                    lockI.tryLock();
+                if (!busI.isLocked()) {
+                    busI.tryLock();
                     cacheInstrucciones[nucleo].locks[posCache].tryLock();
 
                     try { //Se guarda el bloque en memoria
@@ -385,19 +383,17 @@ public class Procesador {
                         cacheInstrucciones[nucleo].valores[posCache][17] = 1;
                         for (int mf = 0; mf < 40; mf++) {
                             //h.ciclosReloj++;
-
-                            //Se aumentan los 40 ciclos de reloj
                         }
                     } finally {
-                        lockI.unlock();
+                        busI.unlock();
                         cacheInstrucciones[nucleo].locks[posCache].unlock();
                     }
                 }
             }
 
-            if (!lockI.isLocked()) {
-                lockI.lock();
-                cacheInstrucciones[nucleo].locks[posCache].lock();
+            if (!busI.isLocked()) {
+                busI.tryLock();
+                cacheInstrucciones[nucleo].locks[posCache].tryLock();
 
                 try {
                     for (int mf = 0; mf < 16; mf++) {
@@ -409,12 +405,15 @@ public class Procesador {
                         //Se aumentan los 40 ciclos de reloj
                     }
                     cacheInstrucciones[nucleo].valores[posCache][17] = 1;
+                    resultado = 0;
                 } finally {
-                    lockI.unlock();
+                    busI.unlock();
                     cacheInstrucciones[nucleo].locks[posCache].unlock();
                 }
             }
+            cacheInstrucciones[nucleo].reservado[posCache] = false;
         }
+        return resultado;
     }
 
     public void llenarContextopc(int fila, int pc) {
