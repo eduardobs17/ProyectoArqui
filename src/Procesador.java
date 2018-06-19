@@ -1,6 +1,11 @@
 import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * 0 = invalido
+ * 1 = compartido
+ * 2 = modificado
+ */
 public class Procesador {
     private static Procesador procesador;
 
@@ -57,17 +62,19 @@ public class Procesador {
     }
 
     public void run(Queue<String> colaHilos, Queue<Integer> colaPCs) {
-        while (!colaHilos.isEmpty()) {
-            if (!colaHilos.isEmpty()) {
-                hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0);
-                hilo0_1.start();
-            }
-
-            if (!colaHilos.isEmpty()) {
-                hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1);
-                hilo1.start();
-            }
+        if (!colaHilos.isEmpty()) {
+            hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0);
+            hilo0_1.start();
         }
+
+        if (!colaHilos.isEmpty()) {
+            hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1);
+            hilo1.start();
+        }
+
+        /*while (!colaHilos.isEmpty()) {
+
+        }*/
     }
 
     /**
@@ -102,14 +109,10 @@ public class Procesador {
                 h.registro[instruccion[3]] = h.registro[instruccion[1]] * h.registro[instruccion[2]];
                 break;
             case 14: //DDIV
-                if (instruccion[2] != 0) {
-                    if (h.registro[instruccion[2]] == 0) { //Divisor es cero
-                        h.registro[instruccion[3]] = 0;
-                    }
-                    else {
-                        h.registro[instruccion[3]] = h.registro[instruccion[1]] / h.registro[instruccion[2]];
-                    }
-
+                if (h.registro[instruccion[2]] == 0) { //Divisor es cero
+                    h.registro[instruccion[3]] = 0;
+                } else {
+                    h.registro[instruccion[3]] = h.registro[instruccion[1]] / h.registro[instruccion[2]];
                 }
                 break;
             case 32: //DADD
@@ -119,7 +122,7 @@ public class Procesador {
                 h.registro[instruccion[3]] = h.registro[instruccion[1]] - h.registro[instruccion[2]];
                 break;
             case 35: //LW
-                loadD(instruccion, h);
+                loadD(instruccion[2], h.registro[instruccion[1]] + instruccion[3], h.getNucleo(), h.registro);
                 break;
             case 43: //SW
                 storeD(instruccion, h);
@@ -133,221 +136,118 @@ public class Procesador {
     /**
      * Metodo para guardar de memoria a registro.
      * 35 Y X n = RX   <--   M[n + (RY)]
-     * @param instruccion
-     * @param h
      */
-    public void loadD (int instruccion[], Hilillo h) {
-        int bloque = h.pc / 16;
-        int palabra = (h.pc % 16) / 4;
-        int posCache = h.calcularPosCache(bloque, h.nucleo);
+    public void loadD (int registro, int posMemoria, int nucleo, int[] registros) {
+        int bloque = posMemoria / 16;
+        int palabra = (posMemoria - 16 * bloque) / 4;
 
-        if (!cacheDatos[h.nucleo].reservado[posCache]) { //Se reserva si no esta reservado
-            cacheDatos[h.nucleo].reservado[posCache] = true;
-            if (cacheDatos[h.nucleo].valores[posCache][4] == bloque) { //Revisa si esta en esa cache
-                if (cacheDatos[h.nucleo].valores[posCache][5] == 2) { //Revisa si esta modificado
-                    if (!lockD.isLocked()) {
+        int posCache = calcularPosCache(bloque, nucleo);
+        int otroNucleo = (nucleo + 1) % 2;
+
+        CacheD copiaCache = cacheDatos[nucleo];
+        CacheD copiaOtraCache = cacheDatos[otroNucleo];
+
+        if (!copiaCache.reservado[posCache]) {                                                          //Se revisa si la posicion de cache está reservada
+            copiaCache.reservado[posCache] = true;
+
+            if (copiaCache.valores[posCache][4] == bloque) {                                            //Se busca el bloque en la cache
+                if ((copiaCache.valores[posCache][5] == 1) || (copiaCache.valores[posCache][5] == 2)) { //Se revisa el estado del bloque
+                                                                                                        //si estado = 1 (C) o estado = 2 (M), se escribe el registro
+                    registros[registro] = copiaCache.valores[posCache][palabra];
+                    copiaCache.reservado[posCache] = false;
+                } else {                                                                                //Si el bloque es invalido
+                    if (!busD.isLocked()) {                                                             //Se revisa estado del bus
+                        busD.tryLock();
                         try {
-                            lockD.tryLock();
-                            cacheDatos[h.nucleo].locks[posCache].tryLock();
-                            for (int i = 0; i < 4; i++) { //Se escribe en memoria
-                                memoria.memDatos[bloque].palabra[i] = cacheDatos[h.nucleo].valores[bloque][i];
-                            }
-                            cacheDatos[h.nucleo].valores[bloque][5] = 1; //Compartido
-                            h.registro[instruccion[2]] = cacheDatos[h.nucleo].valores[bloque][palabra]; //Se escribe en el registro
-                            for  (int i = 0; i < 40; i++) {
-                                //AUMENTAN CICLOS DE RELOJ
-                            }
-                        }
-                        finally {
-                            lockD.unlock();
-                            cacheDatos[h.nucleo].locks[posCache].unlock();
-                        }
-                    }
-                }
-                else { //Si esta invalido o compartido
-                    if (h.nucleo == 0) { //PARA SABER CUAL NUCLEO ES
-                        posCache = h.calcularPosCache(bloque, 1);
-                        if (cacheDatos[1].valores[posCache][4] == bloque) { //Revisa si esta en la otra cache
-                            cacheDatos[1].locks[posCache].tryLock();
-                            if (cacheDatos[1].valores[posCache][5] == 2) { //Revisa si esta modificado
-                                if (!lockD.isLocked()) { //Bus disponible
-                                    try {
-                                        lockD.tryLock();
-                                        for (int i = 0; i < 4; i++) { //Se escribe en memoria
-                                            memoria.memDatos[bloque].palabra[i] = cacheDatos[1].valores[bloque][i];
+                            int posCache2 = calcularPosCache(bloque, otroNucleo);
+
+                            if (!copiaOtraCache.reservado[posCache2]) {
+                                copiaOtraCache.reservado[posCache2] = true;
+
+                                if (copiaOtraCache.valores[posCache2][4] == bloque) {
+                                    if (copiaOtraCache.valores[posCache][5] == 2) {
+                                        copiaOtraCache.locks[posCache2].tryLock();
+                                        copiaCache.locks[posCache].tryLock();
+                                        try {
+                                            guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
+                                            guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache2, copiaCache, posCache);
+                                        } finally {
+                                            copiaOtraCache.locks[posCache2].unlock();
+                                            copiaCache.locks[posCache].unlock();
                                         }
-                                        cacheDatos[1].valores[bloque][5] = 1; //Compartido
-                                        h.registro[instruccion[2]] = cacheDatos[1].valores[bloque][palabra]; //Se escribe en el registro
-                                        for  (int i = 0; i < 40; i++) {
-                                            //AUMENTAN CICLOS DE RELOJ
+                                    } else  {
+                                        copiaCache.locks[posCache].tryLock();
+                                        try {
+                                            guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                        } finally {
+                                            copiaCache.locks[posCache].unlock();
                                         }
                                     }
-                                    finally {
-                                        lockD.unlock();
-                                        cacheDatos[1].locks[posCache].unlock();
+                                } else {
+                                    copiaCache.locks[posCache].tryLock();
+                                    try {
+                                        guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                    } finally {
+                                        copiaCache.locks[posCache].unlock();
                                     }
                                 }
-                                else { cacheDatos[1].locks[posCache].unlock(); } //Bus no disponible
+                                registros[registro] = copiaCache.valores[posCache][palabra];
+                                copiaOtraCache.reservado[posCache2] = false;
                             }
+                        } finally {
+                            busD.unlock();
+                            copiaCache.reservado[posCache] = false;
                         }
-                        else { //Si no esta en la otra cache
-                            for (int i = 0; i < 4; i++) { //Se carga desde memoria en la cache
-                                cacheDatos[1].valores[bloque][i] = memoria.memDatos[bloque].palabra[i];
-                            }
-                            cacheDatos[1].valores[bloque][5] = 1; //Compartido
-                            h.registro[instruccion[2]] = cacheDatos[1].valores[bloque][palabra]; //Se escribe en el registro
-                            for  (int i = 0; i < 40; i++) {
-                                //AUMENTAN CICLOS DE RELOJ
-                            }
-                        }
+                    } else { //Bus no disponible
+                        //LW vuelve a empezar
                     }
-                    else { //PARA SABER CUAL NUCLEO ES
-                        posCache = h.calcularPosCache(bloque, 0);
-                        if (cacheDatos[0].valores[posCache][4] == bloque) { //Revisa si esta en la otra cache
-                            cacheDatos[0].locks[posCache].tryLock();
-                            if (cacheDatos[0].valores[posCache][5] == 2) { //Revisa si esta modificado
-                                if (!lockD.isLocked()) {
+                }
+            } else {                                                                                    //Bloque no está en cache
+                //Se revisa bloque victima
+                if (copiaCache.valores[posCache][5] == 2) {
+                    guardarBloqueEnMemoriaD(copiaCache.valores[posCache]);
+                }
+
+                if (!busD.isLocked()) {                                                                 //Se revisa estado del bus
+                    busD.tryLock();
+                    try {
+                        int posCache2 = calcularPosCache(bloque, otroNucleo);
+
+                        if (!copiaOtraCache.reservado[posCache2]) {
+                            copiaOtraCache.reservado[posCache2] = true;
+
+                            if (copiaOtraCache.valores[posCache2][4] == bloque) {
+                                if (copiaOtraCache.valores[posCache2][5] == 2) {
+                                    copiaOtraCache.locks[posCache2].tryLock();
+                                    copiaCache.locks[posCache].tryLock();
                                     try {
-                                        lockD.tryLock();
-                                        for (int i = 0; i < 4; i++) { //Se escribe en memoria
-                                            memoria.memDatos[bloque].palabra[i] = cacheDatos[0].valores[bloque][i];
-                                        }
-                                        cacheDatos[0].valores[bloque][5] = 1; //Compartido
-                                        h.registro[instruccion[2]] = cacheDatos[0].valores[bloque][palabra]; //Se escribe en el registro
-                                        for  (int i = 0; i < 40; i++) {
-                                            //AUMENTAN CICLOS DE RELOJ
-                                        }
-                                    }
-                                    finally {
-                                        lockD.unlock();
-                                        cacheDatos[0].locks[posCache].unlock();
+                                        guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
+                                        guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache2, copiaCache, posCache);
+                                    } finally {
+                                        copiaOtraCache.locks[posCache2].unlock();
+                                        copiaCache.locks[posCache].unlock();
                                     }
                                 }
-                                else { cacheDatos[0].locks[posCache].unlock(); } //Bus no disponible
-                            }
-                        }
-                        else { //Si no esta en la otra cache
-                            for (int i = 0; i < 4; i++) { //Se carga desde memoria en la cache
-                                cacheDatos[0].valores[bloque][i] = memoria.memDatos[bloque].palabra[i];
-                            }
-                            cacheDatos[0].valores[bloque][5] = 1; //Compartido
-                            h.registro[instruccion[2]] = cacheDatos[0].valores[bloque][palabra]; //Se escribe en el registro
-                            for  (int i = 0; i < 40; i++) {
-                                //AUMENTAN CICLOS DE RELOJ
-                            }
-                        }
-                    }
-                }
-            }
-            else { //Si no esta en esa cache
-                if (cacheDatos[h.nucleo].valores[posCache][5] == 2) { //Revisa estado de bloque victima, si es M
-                    for (int i = 0; i < 4; i++) { //Se escribe en memoria
-                        memoria.memDatos[bloque].palabra[i] = cacheDatos[h.nucleo].valores[bloque][i];
-                    }
-                    for  (int i = 0; i < 40; i++) {
-                        //AUMENTAN CICLOS DE RELOJ
-                    }
-                }
-                if (h.nucleo == 0) { //Revisa si esta en la otra cache
-                    posCache = h.calcularPosCache(bloque, 1);
-                    if (cacheDatos[1].valores[posCache][4] == bloque) {
-                        cacheDatos[1].locks[posCache].tryLock();
-                        if (cacheDatos[1].valores[posCache][5] == 2) { //Revisa si esta modificado
-                            if (!lockD.isLocked()) {
+                            } else {
+                                copiaCache.locks[posCache].tryLock();
                                 try {
-                                    lockD.tryLock();
-                                    for (int i = 0; i < 4; i++) { //Se escribe en memoria
-                                        memoria.memDatos[bloque].palabra[i] = cacheDatos[1].valores[bloque][i];
-                                    }
-                                    cacheDatos[1].valores[bloque][5] = 1; //Compartido
-                                    for (int i = 0; i < 4; i++) { //Y se guarda en la cache original
-                                        cacheDatos[h.nucleo].valores[bloque][i] = memoria.memDatos[bloque].palabra[i];
-                                    }
-                                    h.registro[instruccion[2]] = cacheDatos[h.nucleo].valores[bloque][palabra]; //Se escribe en el registro
-                                    for  (int i = 0; i < 40; i++) {
-                                        //AUMENTAN CICLOS DE RELOJ
-                                    }
-                                }
-                                finally {
-                                    lockD.unlock();
-                                    cacheDatos[1].locks[posCache].unlock();
+                                    guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                } finally {
+                                    copiaCache.locks[posCache].unlock();
                                 }
                             }
-                            else { cacheDatos[1].locks[posCache].unlock(); }
+                            registros[registro] = copiaCache.valores[posCache][palabra];
+                            copiaOtraCache.reservado[posCache2] = false;
                         }
-                        else { //Si es invalido o compartido
-                            for (int i = 0; i < 4; i++) { //Cargar desde memoria a la cache original
-                                cacheDatos[h.nucleo].valores[bloque][i] = memoria.memDatos[bloque].palabra[i];
-                            }
-                            h.registro[instruccion[2]] = cacheDatos[h.nucleo].valores[bloque][palabra]; //Se escribe en el registro
-                            for  (int i = 0; i < 40; i++) {
-                                //AUMENTAN CICLOS DE RELOJ
-                            }
-                        }
+                    } finally {
+                        busD.unlock();
+                        copiaCache.reservado[posCache] = false;
                     }
-                    else { //Si no esta en la otra cache
-                        for (int i = 0; i < 4; i++) { //Cargar desde memoria a la cache original
-                            cacheDatos[h.nucleo].valores[bloque][i] = memoria.memDatos[bloque].palabra[i];
-                        }
-                        h.registro[instruccion[2]] = cacheDatos[h.nucleo].valores[bloque][palabra]; //Se escribe en el registro
-                        for  (int i = 0; i < 40; i++) {
-                            //AUMENTAN CICLOS DE RELOJ
-                        }
-                    }
-                }
-                else {
-                    posCache = h.calcularPosCache(bloque, 0); //Revisa si esta en la otra cache
-                    if (cacheDatos[0].valores[posCache][4] == bloque) {
-                        posCache = h.calcularPosCache(bloque, 0);
-                        if (cacheDatos[0].valores[posCache][4] == bloque) {
-                            cacheDatos[0].locks[posCache].tryLock();
-                            if (cacheDatos[0].valores[posCache][5] == 2) { //Revisa si esta modificado
-                                if (!lockD.isLocked()) {
-                                    try {
-                                        lockD.tryLock();
-                                        for (int i = 0; i < 4; i++) { //Se escribe en memoria
-                                            memoria.memDatos[bloque].palabra[i] = cacheDatos[0].valores[bloque][i];
-                                        }
-                                        cacheDatos[0].valores[bloque][5] = 1; //Compartido
-                                        for (int i = 0; i < 4; i++) { //Y se guarda en la cache original
-                                            cacheDatos[h.nucleo].valores[bloque][i] = memoria.memDatos[bloque].palabra[i];
-                                        }
-                                        h.registro[instruccion[2]] = cacheDatos[h.nucleo].valores[bloque][palabra]; //Se escribe en el registro
-                                        for  (int i = 0; i < 40; i++) {
-                                            //AUMENTAN CICLOS DE RELOJ
-                                        }
-                                    }
-                                    finally {
-                                        lockD.unlock();
-                                        cacheDatos[0].locks[posCache].unlock();
-                                    }
-                                }
-                                else { cacheDatos[0].locks[posCache].unlock(); }
-                            }
-                            else { //Si es invalido o compartido
-                                for (int i = 0; i < 4; i++) { //Cargar desde memoria a la cache original
-                                    cacheDatos[h.nucleo].valores[bloque][i] = memoria.memDatos[bloque].palabra[i];
-                                }
-                                h.registro[instruccion[2]] = cacheDatos[h.nucleo].valores[bloque][palabra]; //Se escribe en el registro
-                                for  (int i = 0; i < 40; i++) {
-                                    //AUMENTAN CICLOS DE RELOJ
-                                }
-                            }
-                        }
-                        else { //Si no esta en la otra cache
-                            for (int i = 0; i < 4; i++) { //Cargar desde memoria a la cache original
-                                cacheDatos[h.nucleo].valores[bloque][i] = memoria.memDatos[bloque].palabra[i];
-                            }
-                            h.registro[instruccion[2]] = cacheDatos[h.nucleo].valores[bloque][palabra]; //Se escribe en el registro
-                            for  (int i = 0; i < 40; i++) {
-                                //AUMENTAN CICLOS DE RELOJ
-                            }
-                        }
-                    }
+                } else { //Bus no disponible
+                    //LW vuelve a empezar
                 }
             }
         }
-        //CAMBIO DE CICLO DE RELOJ
     }
 
     /**
@@ -363,10 +263,9 @@ public class Procesador {
     /**
      * Metodo para guardar de memoria a cache
      */
-    public int loadI (int nucleo, int posCache, int posMem/*, Hilillo h*/) {
+    public void loadI (int nucleo, int posCache, int posMem, Hilillo h) {
         int bloqueMem = posMem / 16;
         int bloqueEnMemoria = bloqueMem - 24;
-        int resultado = -1;
 
         if (!cacheInstrucciones[nucleo].reservado[posCache]) { //Se revisa si la posicion de cache ya está reservada
             cacheInstrucciones[nucleo].reservado[posCache] = true;
@@ -377,12 +276,10 @@ public class Procesador {
                     cacheInstrucciones[nucleo].locks[posCache].tryLock();
 
                     try { //Se guarda el bloque en memoria
-                        for (int mf = 0; mf < 16; mf++) {
-                            memoria.memInstrucciones[bloqueEnMemoria].palabra[mf] = cacheInstrucciones[nucleo].valores[posCache][mf];
-                        }
+                        System.arraycopy(cacheInstrucciones[nucleo].valores[posCache], 0, memoria.memInstrucciones[bloqueEnMemoria].palabra, 0, 16);
                         cacheInstrucciones[nucleo].valores[posCache][17] = 1;
                         for (int mf = 0; mf < 40; mf++) {
-                            //h.ciclosReloj++;
+                            h.ciclosReloj++;
                         }
                     } finally {
                         busI.unlock();
@@ -396,16 +293,12 @@ public class Procesador {
                 cacheInstrucciones[nucleo].locks[posCache].tryLock();
 
                 try {
-                    for (int mf = 0; mf < 16; mf++) {
-                        cacheInstrucciones[nucleo].valores[posCache][mf] = memoria.memInstrucciones[bloqueEnMemoria].palabra[mf];
-                    }
+                    System.arraycopy(memoria.memInstrucciones[bloqueEnMemoria].palabra, 0, cacheInstrucciones[nucleo].valores[posCache], 0, 16);
                     cacheInstrucciones[nucleo].valores[posCache][16] = bloqueMem;
                     for (int mf = 0; mf < 40; mf++) {
-                        //h.ciclosReloj++;
-                        //Se aumentan los 40 ciclos de reloj
+                        h.ciclosReloj++;
                     }
                     cacheInstrucciones[nucleo].valores[posCache][17] = 1;
-                    resultado = 0;
                 } finally {
                     busI.unlock();
                     cacheInstrucciones[nucleo].locks[posCache].unlock();
@@ -413,40 +306,36 @@ public class Procesador {
             }
             cacheInstrucciones[nucleo].reservado[posCache] = false;
         }
-        return resultado;
     }
 
     public void llenarContextopc(int fila, int pc) {
         contexto[fila][32] = pc;
     }
 
-    /**
-     * 0 = invalido
-     * 1 = compartido
-     * 2 = modificado
-     * @param pc
-     * @param nucleo
-     * @return
-     */
-    private boolean buscarInstruccionEnCache(int pc, int nucleo) {
-        int bloque = pc / 16;
-        int posCache;
-        if (nucleo == 0) { //Busca en cache del nucleo 0
-            posCache = bloque % 8;
-            if (cacheInstrucciones[0].valores[posCache][16] == bloque) { // Revisa etiqueta
-                if (cacheInstrucciones[0].valores[posCache][17] != 0) {
-                    return true;
-                }
-            }
+    public int calcularPosCache(int numeroBloque, int nucleo) {
+        if (nucleo == 0) {
+            return numeroBloque % 8;
         } else {
-            posCache = bloque % 4;
-            if (cacheInstrucciones[1].valores[posCache][4] == bloque) { // Revisa etiqueta
-                if (cacheInstrucciones[1].valores[posCache][5] != 0) {
-                    return true;
-                }
-            }
+            return numeroBloque % 4;
         }
-        return false;
     }
 
+    private void guardarBloqueEnMemoriaD(int[] array) {
+        int bloque = array[4];
+        System.arraycopy(array, 0, memoria.memDatos[bloque].palabra, 0, 4);
+    }
+
+    private void guardarBloqueEnCacheDesdeCacheD(CacheD cacheF, int posCacheF, CacheD cacheD, int posCacheD) {
+        System.arraycopy(cacheF.valores[posCacheF], 0, cacheD.valores[posCacheD], 0, 5);
+        cacheD.valores[posCacheD][5] = 1;
+        cacheF.valores[posCacheF][5] = 1;
+    }
+
+    private void guardarBloqueEnCacheDesdeMemoriaD(int numBloque, CacheD cache, int posCache) {
+        for (int x = 0; x < 4; x++) {
+            cache.valores[posCache][x] = memoria.memDatos[numBloque].palabra[x];
+        }
+        cache.valores[posCache][4] = numBloque;
+        cache.valores[posCache][5] = 1;
+    }
 }

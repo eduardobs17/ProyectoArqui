@@ -22,7 +22,7 @@ class CacheD {
         } else {
             valores = new int[4][6];
             locks = new ReentrantLock[4];
-            reservado = new boolean[8];
+            reservado = new boolean[4];
 
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 6; j++) {

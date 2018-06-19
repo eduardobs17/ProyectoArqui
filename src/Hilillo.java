@@ -25,14 +25,15 @@ public class Hilillo extends Thread {
         int bloque, posCacheI, estadoHilillo = 1, numPalabra;
 
         while (estadoHilillo != 0) {
+            System.out.println("Hilillo 1, estado " + estadoHilillo);
             bloque = pc / 16;
             numPalabra = pc - (bloque*16);
-            posCacheI = calcularPosCache(bloque, nucleo);
+            posCacheI = procesador.calcularPosCache(bloque, nucleo);
 
             if (procesador.cacheInstrucciones[nucleo].valores[posCacheI][16] != bloque
                     || (procesador.cacheInstrucciones[nucleo].valores[posCacheI][16] == bloque
                     && procesador.cacheInstrucciones[nucleo].valores[posCacheI][17] == 0)) {
-                procesador.loadI(nucleo, posCacheI, pc);
+                procesador.loadI(nucleo, posCacheI, pc, this);
             }
 
             for (int x = 0; x < 4; x++) {
@@ -45,11 +46,5 @@ public class Hilillo extends Thread {
         }
     }
 
-    private int calcularPosCache(int numeroBloque, int nucleo) {
-        if (nucleo == 0) {
-            return numeroBloque % 8;
-        } else {
-            return numeroBloque % 4;
-        }
-    }
+    public int getNucleo() { return nucleo; }
 }
