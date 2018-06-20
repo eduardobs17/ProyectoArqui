@@ -135,7 +135,7 @@ public class Procesador {
                 loadD(instruccion[2], h.registro[instruccion[1]] + instruccion[3], h.getNucleo(), h.registro);
                 break;
             case 43: //SW
-                storeD(instruccion, h);
+                storeD(instruccion[2], h.registro[instruccion[1]] + instruccion[3]);
                 break;
             case 63: //FIN
                 return 0;
@@ -151,7 +151,7 @@ public class Procesador {
      * @param nucleo
      * @param registros
      */
-    public void loadD (int registro, int posMemoria, int nucleo, int[] registros) {
+    private void loadD (int registro, int posMemoria, int nucleo, int[] registros) {
         int bloque = posMemoria / 16;
         int palabra = (posMemoria - 16 * bloque) / 4;
 
@@ -266,10 +266,8 @@ public class Procesador {
     /**
      * Metodo para STORE: guardar de registro a memoria.
      * 43 Y X n = M[n + (RY)]   <--   RX
-     * @param instruccion
-     * @param h
      */
-    public void storeD (int instruccion[], Hilillo h) {
+    private void storeD (int registro, int posMemoria) {
 
     }
 
@@ -334,6 +332,12 @@ public class Procesador {
         contexto[fila][32] = pc;
     }
 
+    /**
+     * Calcula la posición de un bloque en una cache usando el algoritmo de Mapeo Directo.
+     * @param numeroBloque El numero del bloque que se quiere calcular.
+     * @param nucleo El nucleo en el que se ubica la cache en la que se quiere copiar el bloque.
+     * @return La posicion en la cache en la que se guardara el bloque.
+     */
     public int calcularPosCache(int numeroBloque, int nucleo) {
         if (nucleo == 0) {
             return numeroBloque % 8;
@@ -352,11 +356,11 @@ public class Procesador {
     }
 
     /**
-     * Metodo para guardar bloque en cache desde cache de datos.
-     * @param cacheF
-     * @param posCacheF
-     * @param cacheD
-     * @param posCacheD
+     * Método que guarda en cache un bloque proveniente desde la cache del otro nucleo.
+     * @param cacheF La cache que contiene el bloque que se guardará.
+     * @param posCacheF La posición del bloque en la cache fuente.
+     * @param cacheD La cache en la que se guardara el bloque.
+     * @param posCacheD La posición en la que se guardara el bloque.
      */
     private void guardarBloqueEnCacheDesdeCacheD(CacheD cacheF, int posCacheF, CacheD cacheD, int posCacheD) {
         System.arraycopy(cacheF.valores[posCacheF], 0, cacheD.valores[posCacheD], 0, 5);
@@ -365,15 +369,13 @@ public class Procesador {
     }
 
     /**
-     * Metodo para guardar bloque en cache desde la memoria de datos.
-     * @param numBloque
-     * @param cache
-     * @param posCache
-     */
+     * Método que guarda en cache un bloque proveniente de la memoria de datos.
+     * @param numBloque Numero de bloque de la memoria que se pasara a la cache.
+     * @param cache La cache en la que se guardara el bloque.
+     * @param posCache Posicion de la cache en la que se guardara el bloque.
+     * */
     private void guardarBloqueEnCacheDesdeMemoriaD(int numBloque, CacheD cache, int posCache) {
-        for (int x = 0; x < 4; x++) {
-            cache.valores[posCache][x] = memoria.memDatos[numBloque].palabra[x];
-        }
+        System.arraycopy(memoria.memDatos[numBloque].palabra, 0, cache.valores[posCache], 0, 4);
         cache.valores[posCache][4] = numBloque;
         cache.valores[posCache][5] = 1;
     }
