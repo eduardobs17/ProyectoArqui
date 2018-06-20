@@ -49,6 +49,12 @@ public class Procesador {
         }
     }
 
+    /**
+     * Metodo Singleton
+     * @param cantH
+     * @param tamQ
+     * @return
+     */
     public static Procesador getInstancia(int cantH, int tamQ) {
         if (procesador == null) {
             procesador = new Procesador(cantH, tamQ);

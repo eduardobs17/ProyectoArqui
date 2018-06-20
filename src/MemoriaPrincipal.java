@@ -33,6 +33,10 @@ public class MemoriaPrincipal {
         }
     }
 
+    /**
+     * Metodo Singleton
+     * @return
+     */
     public static MemoriaPrincipal getInstancia() {
         if (memoria == null) {
             memoria = new MemoriaPrincipal();
