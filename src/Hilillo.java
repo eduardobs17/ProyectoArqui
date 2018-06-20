@@ -17,23 +17,12 @@ public class Hilillo extends Thread {
     CyclicBarrier barreraI;
     CyclicBarrier barreraF;
 
-    /**
-     * Constructor de Hilillo, inicializa variables y obtiene el procesador por medio de Singleton.
-     * @param inst
-     * @param pcHilillo
-     * @param pNucleo
-     * @param bai
-     * @param baf
-     * @param cantHilos
-     * @param q
-     */
-    Hilillo(String inst, int pcHilillo, int pNucleo, CyclicBarrier bai, CyclicBarrier baf, int cantHilos, int q) {
+    Hilillo(String inst, int pcHilillo, int pNucleo, CyclicBarrier bai, CyclicBarrier baf) {
         cantInst = inst.split("\n").length;
         pc = pcHilillo;
         nucleo = pNucleo;
-        procesador = Procesador.getInstancia(cantHilos, q);
+        procesador = Procesador.getInstancia(1,1);
         ciclosReloj = 0;
-        quantum = q;
 
         barreraI = bai;
         barreraF = baf;

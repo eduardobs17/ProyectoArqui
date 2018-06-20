@@ -78,6 +78,14 @@ public class Procesador {
         /*while (!colaHilos.isEmpty()) {
 
         }*/
+        try {
+            System.out.println("Levanto barrera");
+            bi.await();
+            bf.await();
+            System.out.println("Terminado: todos llegan aqui");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public int ALU (int instruccion[], Hilillo h) {

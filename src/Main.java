@@ -6,16 +6,16 @@ import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.CyclicBarrier;
 
+/** Clase principal del programa. */
 public class Main {
 
     /**
      * Metodo principal que inicia el programa.
-     * @param argv
+     * @param argv Parametros de entrada.
      */
     public static void main(String[] argv) {
         System.out.println("SIMULACION PROCESADOR MULTINUCLEO\n");
 
-        MemoriaPrincipal memoria = MemoriaPrincipal.getInstancia();
         Scanner reader = new Scanner(System.in);
         int cantHilos, quantum, pc;
 
@@ -24,11 +24,11 @@ public class Main {
         System.out.println("Digite el tamaño de quantum que desea:");
         quantum = reader.nextInt();
 
+        MemoriaPrincipal memoria = MemoriaPrincipal.getInstancia();
         Procesador procesador = Procesador.getInstancia(cantHilos, quantum);
-        Queue<String> colaHilos = new ArrayDeque<String>(cantHilos+1);
-        Queue<Integer> colaPCs = new ArrayDeque<Integer>(cantHilos+1);
+        Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
+        Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
 
-        // Doble barrera
         CyclicBarrier barreraI = new CyclicBarrier(cantHilos);
         CyclicBarrier barreraF = new CyclicBarrier(cantHilos);
 
@@ -41,21 +41,11 @@ public class Main {
             colaPCs.add(pc);
         }
         procesador.run(colaHilos, colaPCs, barreraI, barreraF);
-
-        /*try {
-            System.out.println("Levanto barrera");
-            barreraI.await();
-            barreraF.await();
-            System.out.println("Terminado: todos llegan aqui");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
     }
 
     /**
-     * Apertura del fichero y creacion de BufferedReader para poder
-     * hacer una lectura comoda (disponer del metodo readLine()).
-     * @param rutaArchivo
+     * Metodo que lee y guarda las instrucciones de los archivos de los hilillos.
+     * @param rutaArchivo Ruta del archivo que contiene las instrucciones.
      */
     private static String leerArchivo(String rutaArchivo) {
         String instrucciones = "";
