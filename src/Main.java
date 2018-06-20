@@ -25,8 +25,8 @@ public class Main {
         quantum = reader.nextInt();
 
         Procesador procesador = Procesador.getInstancia(cantHilos, quantum);
-        Queue<String> colaHilos = new ArrayDeque<>(cantHilos+1);
-        Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos+1);
+        Queue<String> colaHilos = new ArrayDeque<String>(cantHilos+1);
+        Queue<Integer> colaPCs = new ArrayDeque<Integer>(cantHilos+1);
 
         // Doble barrera
         CyclicBarrier barreraI = new CyclicBarrier(cantHilos);
