@@ -40,16 +40,16 @@ public class Main {
             colaHilos.add(inst);
             colaPCs.add(pc);
         }
-        procesador.run(colaHilos, colaPCs, barreraI, barreraF, cantHilos, quantum);
+        procesador.run(colaHilos, colaPCs, barreraI, barreraF);
 
-        try {
+        /*try {
             System.out.println("Levanto barrera");
             barreraI.await();
             barreraF.await();
             System.out.println("Terminado: todos llegan aqui");
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     /**

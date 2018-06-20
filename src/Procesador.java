@@ -49,13 +49,6 @@ public class Procesador {
         }
     }
 
-    /**
-     * Metodo Singleton
-     * Controla que solo se maneje una instancia de procesador en el programa.
-     * @param cantH
-     * @param tamQ
-     * @return
-     */
     public static Procesador getInstancia(int cantH, int tamQ) {
         if (procesador == null) {
             procesador = new Procesador(cantH, tamQ);
@@ -71,14 +64,14 @@ public class Procesador {
         return null;
     }
 
-    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi, CyclicBarrier bf, int cantHilos, int quantum) {
+    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi, CyclicBarrier bf) {
         if (!colaHilos.isEmpty()) {
-            hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi, bf, cantHilos, quantum);
+            hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi, bf);
             hilo0_1.start();
         }
 
         if (!colaHilos.isEmpty()) {
-            hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi, bf, cantHilos, quantum);
+            hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi, bf);
             hilo1.start();
         }
 
@@ -87,11 +80,6 @@ public class Procesador {
         }*/
     }
 
-    /**
-     * Este método manejará las instrucciones que estan en el IR y su codificación.
-     * @param instruccion
-     * @param h
-     */
     public int ALU (int instruccion[], Hilillo h) {
         int y = instruccion[0];
         switch (y) {
@@ -135,7 +123,7 @@ public class Procesador {
                 loadD(instruccion[2], h.registro[instruccion[1]] + instruccion[3], h.getNucleo(), h.registro);
                 break;
             case 43: //SW
-                storeD(instruccion[2], h.registro[instruccion[1]] + instruccion[3]);
+                storeD(instruccion[2], h.registro[instruccion[1]] + instruccion[3], h.getNucleo(), h.registro);
                 break;
             case 63: //FIN
                 return 0;
@@ -143,17 +131,9 @@ public class Procesador {
         return 1;
     }
 
-    /**
-     * Metodo para LOADD: guardar de memoria a registro.
-     * 35 Y X n = RX   <--   M[n + (RY)]
-     * @param registro
-     * @param posMemoria
-     * @param nucleo
-     * @param registros
-     */
     private void loadD (int registro, int posMemoria, int nucleo, int[] registros) {
         int bloque = posMemoria / 16;
-        int palabra = (posMemoria - 16 * bloque) / 4;
+        int palabra = (posMemoria % 16) / 4;
 
         int posCache = calcularPosCache(bloque, nucleo);
         int otroNucleo = (nucleo + 1) % 2;
@@ -161,16 +141,21 @@ public class Procesador {
         CacheD copiaCache = cacheDatos[nucleo];
         CacheD copiaOtraCache = cacheDatos[otroNucleo];
 
-        if (!copiaCache.reservado[posCache]) {                                                          //Se revisa si la posicion de cache está reservada.
+        if (!copiaCache.reservado[posCache]) {                                                          //Se revisa si la posicion de cache está reservada
             copiaCache.reservado[posCache] = true;
 
-            if (copiaCache.valores[posCache][4] == bloque) {                                            //Se busca el bloque en la cache.
-                if ((copiaCache.valores[posCache][5] == 1) || (copiaCache.valores[posCache][5] == 2)) { //Se revisa el estado del bloque.
-                                                                                                        //si estado = 1 (C) o estado = 2 (M), se escribe el registro.
-                    registros[registro] = copiaCache.valores[posCache][palabra];
-                    copiaCache.reservado[posCache] = false;
-                } else {                                                                                //Si el bloque es invalido.
-                    if (!busD.isLocked()) {                                                             //Se revisa estado del bus.
+            if (copiaCache.valores[posCache][4] == bloque) {                                            //Se busca el bloque en la cache
+                if ((copiaCache.valores[posCache][5] == 1) || (copiaCache.valores[posCache][5] == 2)) { //Se revisa el estado del bloque
+                                                                                                        //si estado = 1 (C) o estado = 2 (M), se escribe el registro
+                    copiaCache.locks[posCache].tryLock();
+                    try {
+                        registros[registro] = copiaCache.valores[posCache][palabra];
+                    } finally {
+                        copiaCache.locks[posCache].unlock();
+                        copiaCache.reservado[posCache] = false;
+                    }
+                } else {                                                                                //Si el bloque es invalido
+                    if (!busD.isLocked()) {                                                             //Se revisa estado del bus
                         busD.tryLock();
                         try {
                             int posCache2 = calcularPosCache(bloque, otroNucleo);
@@ -212,16 +197,17 @@ public class Procesador {
                             busD.unlock();
                             copiaCache.reservado[posCache] = false;
                         }
-                    } else { //Bus no disponible.
-                        //LW vuelve a empezar.
+                    } else { //Bus no disponible
+                        //LW vuelve a empezar
                     }
                 }
-            } else {                                                                                   //Bloque no está en cache.
-                if (copiaCache.valores[posCache][5] == 2) {                                            //Se revisa bloque victima.
+            } else {                                                                                    //Bloque no está en cache
+                //Se revisa bloque victima
+                if (copiaCache.valores[posCache][5] == 2) {
                     guardarBloqueEnMemoriaD(copiaCache.valores[posCache]);
                 }
 
-                if (!busD.isLocked()) {                                                                //Se revisa estado del bus.
+                if (!busD.isLocked()) {                                                                 //Se revisa estado del bus
                     busD.tryLock();
                     try {
                         int posCache2 = calcularPosCache(bloque, otroNucleo);
@@ -263,34 +249,138 @@ public class Procesador {
         }
     }
 
-    /**
-     * Metodo para STORE: guardar de registro a memoria.
-     * 43 Y X n = M[n + (RY)]   <--   RX
-     */
-    private void storeD (int registro, int posMemoria) {
+    private void storeD (int registro, int posMemoria, int nucleo, int[] registros) {
+        int bloque = posMemoria / 16;
+        int palabra = (posMemoria % 16) / 4;
 
+        int posCache = calcularPosCache(bloque, nucleo);
+        int otroNucleo = (nucleo + 1) % 2;
+
+        CacheD copiaCache = cacheDatos[nucleo];
+        CacheD copiaOtraCache = cacheDatos[otroNucleo];
+
+        if (!copiaCache.reservado[posCache]) {
+            copiaCache.reservado[posCache] = true;
+
+            if (copiaCache.valores[posCache][4] == bloque) {
+                if (copiaCache.valores[posCache][5] == 2) {
+                    copiaCache.locks[posCache].tryLock();
+                    try {
+                        copiaCache.valores[posCache][palabra] = registros[registro];
+                    } finally {
+                        copiaCache.locks[posCache].unlock();
+                    }
+                } else if (copiaCache.valores[posCache][5] == 1) {
+                    if (!busD.isLocked()) {
+                        busD.tryLock();
+                        try {
+                            int posCache2 = calcularPosCache(bloque, otroNucleo);
+
+                            if (!copiaOtraCache.reservado[posCache2]) {
+                                copiaOtraCache.reservado[posCache2] = true;
+
+                                if (copiaOtraCache.valores[posCache2][4] == bloque) {
+                                    if (copiaOtraCache.valores[posCache][5] == 0) {
+                                        copiaCache.locks[posCache].tryLock();
+                                        try {
+                                            copiaCache.valores[posCache][palabra] = registros[registro];
+                                        } finally {
+                                            copiaCache.locks[posCache].unlock();
+                                        }
+                                    } else if (copiaOtraCache.valores[posCache][5] == 1) {
+                                        copiaCache.locks[posCache].tryLock();
+                                        copiaOtraCache.locks[posCache2].tryLock();
+                                        try {
+                                            copiaOtraCache.valores[posCache2][5] = 0;
+                                            copiaCache.valores[posCache][palabra] = registros[registro];
+                                            copiaCache.valores[posCache][5] = 2;
+                                        } finally {
+                                            copiaCache.locks[posCache].unlock();
+                                            copiaOtraCache.locks[posCache2].unlock();
+                                        }
+                                    }
+                                }
+                                copiaOtraCache.reservado[posCache2] = false;
+                            }
+                        } finally {
+                            busD.unlock();
+                        }
+                    }
+                }
+            } else { //Fallo de caché
+                //Se revisa bloque victima
+                if (copiaCache.valores[posCache][5] == 2) {
+                    //Se debe reservar el bus
+                    guardarBloqueEnMemoriaD(copiaCache.valores[posCache]);
+                }
+
+                if (!busD.isLocked()) {
+                    busD.tryLock();
+                    try {
+                        int posCache2 = calcularPosCache(bloque, otroNucleo);
+
+                        if (!copiaOtraCache.reservado[posCache2]) {
+                            copiaOtraCache.reservado[posCache2] = true;
+
+                            if (copiaOtraCache.valores[posCache2][4] == bloque) {
+                                if (copiaOtraCache.valores[posCache2][5] == 2) {
+                                    copiaOtraCache.locks[posCache2].tryLock();
+                                    copiaCache.locks[posCache].tryLock();
+                                    try {
+                                        guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
+                                        guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache2, copiaCache, posCache);
+                                        copiaCache.valores[posCache][palabra] = registros[registro];
+                                        copiaCache.valores[posCache][5] = 2;
+                                        copiaOtraCache.valores[posCache2][5] = 0;
+                                    } finally {
+                                        copiaOtraCache.locks[posCache2].unlock();
+                                        copiaCache.locks[posCache].unlock();
+                                    }
+                                } else {
+                                    copiaCache.locks[posCache].tryLock();
+                                    try {
+                                        guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                        copiaCache.valores[posCache][palabra] = registros[registro];
+                                        copiaCache.valores[posCache][5] = 2;
+                                        copiaOtraCache.valores[posCache2][5] = 0;
+                                    } finally {
+                                        copiaCache.locks[posCache].unlock();
+                                    }
+                                }
+                            } else {
+                                copiaCache.locks[posCache].tryLock();
+                                try {
+                                    guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                    copiaCache.valores[posCache][palabra] = registros[registro];
+                                    copiaCache.valores[posCache][5] = 2;
+                                } finally {
+                                    copiaCache.locks[posCache].unlock();
+                                }
+                            }
+                            copiaOtraCache.reservado[posCache2] = false;
+                        }
+                    } finally {
+                        busD.unlock();
+                    }
+                }
+            }
+            copiaCache.reservado[posCache] = false;
+        }
     }
 
-    /**
-     * Metodo para LOADI: guardar de memoria a cache.
-     * @param nucleo
-     * @param posCache
-     * @param posMem
-     * @param h
-     */
     public void loadI (int nucleo, int posCache, int posMem, Hilillo h) {
         int bloqueMem = posMem / 16;
         int bloqueEnMemoria = bloqueMem - 24;
 
-        if (!cacheInstrucciones[nucleo].reservado[posCache]) { //Se revisa si la posicion de cache ya está reservada.
+        if (!cacheInstrucciones[nucleo].reservado[posCache]) { //Se revisa si la posicion de cache ya está reservada
             cacheInstrucciones[nucleo].reservado[posCache] = true;
 
-            if (cacheInstrucciones[nucleo].valores[posCache][17] == 2) { //Se revisa bloque victima.
+            if (cacheInstrucciones[nucleo].valores[posCache][17] == 2) { //Se revisa bloque victima
                 if (!busI.isLocked()) {
                     busI.tryLock();
                     cacheInstrucciones[nucleo].locks[posCache].tryLock();
 
-                    try { //Se guarda el bloque en memoria.
+                    try { //Se guarda el bloque en memoria
                         System.arraycopy(cacheInstrucciones[nucleo].valores[posCache], 0, memoria.memInstrucciones[bloqueEnMemoria].palabra, 0, 16);
                         cacheInstrucciones[nucleo].valores[posCache][17] = 1;
                         for (int mf = 0; mf < 40; mf++) {
@@ -323,11 +413,6 @@ public class Procesador {
         }
     }
 
-    /**
-     * Metodo para llenar el contexto de los hilillos.
-     * @param fila
-     * @param pc
-     */
     public void llenarContextopc(int fila, int pc) {
         contexto[fila][32] = pc;
     }
@@ -346,10 +431,6 @@ public class Procesador {
         }
     }
 
-    /**
-     * Metodo para guardar un bloque en memoria de datos.
-     * @param array
-     */
     private void guardarBloqueEnMemoriaD(int[] array) {
         int bloque = array[4];
         System.arraycopy(array, 0, memoria.memDatos[bloque].palabra, 0, 4);
