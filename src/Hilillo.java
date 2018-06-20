@@ -43,7 +43,7 @@ public class Hilillo extends Thread {
         int bloque, posCacheI, estadoHilillo = 1, numPalabra;
 
         while (estadoHilillo != 0) {
-            System.out.println("Hilillo 1, estado " + estadoHilillo);
+            //System.out.println("Hilillo 1, estado " + estadoHilillo);
             bloque = pc / 16;
             numPalabra = pc - (bloque*16);
             posCacheI = procesador.calcularPosCache(bloque, nucleo);
