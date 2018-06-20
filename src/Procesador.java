@@ -64,14 +64,14 @@ public class Procesador {
         return null;
     }
 
-    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi, CyclicBarrier bf) {
+    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi, CyclicBarrier bf, int cantHilos, int quantum) {
         if (!colaHilos.isEmpty()) {
-            hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi, bf);
+            hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi, bf, cantHilos, quantum);
             hilo0_1.start();
         }
 
         if (!colaHilos.isEmpty()) {
-            hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi, bf);
+            hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi, bf, cantHilos, quantum);
             hilo1.start();
         }
 

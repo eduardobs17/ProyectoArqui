@@ -38,7 +38,7 @@ public class Main {
             colaHilos.add(inst);
             colaPCs.add(pc);
         }
-        procesador.run(colaHilos, colaPCs, barreraI, barreraF);
+        procesador.run(colaHilos, colaPCs, barreraI, barreraF, cantHilos, quantum);
 
         try {
             System.out.println("Levanto barrera");
