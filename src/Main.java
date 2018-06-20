@@ -1,11 +1,15 @@
+import com.sun.rmi.rmid.ExecOptionPermission;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.Scanner;
+import java.util.concurrent.CyclicBarrier;
 
 public class Main {
+
     public static void main(String[] argv) {
         System.out.println("SIMULACION PROCESADOR MULTINUCLEO\n");
 
@@ -22,6 +26,10 @@ public class Main {
         Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
         Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
 
+        // Doble barrera
+        CyclicBarrier barreraI = new CyclicBarrier(cantHilos + 1);
+        CyclicBarrier barreraF = new CyclicBarrier(cantHilos + 1);
+
         for (int i = 0; i < cantHilos; i++) {
             String rutaHilo = i + ".txt";
             String inst = leerArchivo(rutaHilo);
@@ -30,7 +38,16 @@ public class Main {
             colaHilos.add(inst);
             colaPCs.add(pc);
         }
-        procesador.run(colaHilos, colaPCs);
+        procesador.run(colaHilos, colaPCs, barreraI, barreraF);
+
+        try {
+            System.out.println("Levanto barrera");
+            barreraI.await();
+            barreraF.await();
+            System.out.println("Terminado: todos llegan aqui");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**

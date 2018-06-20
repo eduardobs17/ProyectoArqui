@@ -1,4 +1,5 @@
 import java.util.Queue;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -15,7 +16,7 @@ public class Procesador {
     private Hilillo hilo0_2 = null;
     private Hilillo hilo1 = null;
 
-    private final int cantHilos, quantum;
+    public final int cantHilos, quantum;
 
     private int contexto[][];
     public CacheD[] cacheDatos = new CacheD[2];
@@ -26,6 +27,8 @@ public class Procesador {
     /**
      * Constructor
      * Se inicializa en ceros el contexto y las caches.
+     * @param cant
+     * @param tamQuantum
      */
     private Procesador(int cant, int tamQuantum) {
         memoria = MemoriaPrincipal.getInstancia();
@@ -61,14 +64,14 @@ public class Procesador {
         return null;
     }
 
-    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs) {
+    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi, CyclicBarrier bf) {
         if (!colaHilos.isEmpty()) {
-            hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0);
+            hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi, bf);
             hilo0_1.start();
         }
 
         if (!colaHilos.isEmpty()) {
-            hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1);
+            hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi, bf);
             hilo1.start();
         }
 
@@ -134,8 +137,12 @@ public class Procesador {
     }
 
     /**
-     * Metodo para guardar de memoria a registro.
+     * Metodo para LOADD: guardar de memoria a registro.
      * 35 Y X n = RX   <--   M[n + (RY)]
+     * @param registro
+     * @param posMemoria
+     * @param nucleo
+     * @param registros
      */
     public void loadD (int registro, int posMemoria, int nucleo, int[] registros) {
         int bloque = posMemoria / 16;
@@ -251,7 +258,7 @@ public class Procesador {
     }
 
     /**
-     * Metodo para guardar de registro a memoria
+     * Metodo para STORE: guardar de registro a memoria
      * 43 Y X n = M[n + (RY)]   <--   RX
      * @param instruccion
      * @param h
@@ -261,7 +268,11 @@ public class Procesador {
     }
 
     /**
-     * Metodo para guardar de memoria a cache
+     * Metodo para LOADI: guardar de memoria a cache.
+     * @param nucleo
+     * @param posCache
+     * @param posMem
+     * @param h
      */
     public void loadI (int nucleo, int posCache, int posMem, Hilillo h) {
         int bloqueMem = posMem / 16;
@@ -308,6 +319,11 @@ public class Procesador {
         }
     }
 
+    /**
+     * Metodo para llenar el contexto de los hilillos.
+     * @param fila
+     * @param pc
+     */
     public void llenarContextopc(int fila, int pc) {
         contexto[fila][32] = pc;
     }
@@ -320,17 +336,34 @@ public class Procesador {
         }
     }
 
+    /**
+     * Metodo para guardar un bloque en memoria de datos.
+     * @param array
+     */
     private void guardarBloqueEnMemoriaD(int[] array) {
         int bloque = array[4];
         System.arraycopy(array, 0, memoria.memDatos[bloque].palabra, 0, 4);
     }
 
+    /**
+     * Metodo para guardar bloque en cache desde cache de datos.
+     * @param cacheF
+     * @param posCacheF
+     * @param cacheD
+     * @param posCacheD
+     */
     private void guardarBloqueEnCacheDesdeCacheD(CacheD cacheF, int posCacheF, CacheD cacheD, int posCacheD) {
         System.arraycopy(cacheF.valores[posCacheF], 0, cacheD.valores[posCacheD], 0, 5);
         cacheD.valores[posCacheD][5] = 1;
         cacheF.valores[posCacheF][5] = 1;
     }
 
+    /**
+     * Metodo para guardar bloque en cache desde la memoria de datos.
+     * @param numBloque
+     * @param cache
+     * @param posCache
+     */
     private void guardarBloqueEnCacheDesdeMemoriaD(int numBloque, CacheD cache, int posCache) {
         for (int x = 0; x < 4; x++) {
             cache.valores[posCache][x] = memoria.memDatos[numBloque].palabra[x];

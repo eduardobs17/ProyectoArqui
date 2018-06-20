@@ -1,3 +1,5 @@
+import java.util.concurrent.CyclicBarrier;
+
 public class Hilillo extends Thread {
     private Procesador procesador;
     private int nucleo, cantInst;
@@ -11,17 +13,33 @@ public class Hilillo extends Thread {
     public int ciclosReloj;
     public int quantum = 0;
 
-    Hilillo(String inst, int pcHilillo, int pNucleo) {
+    CyclicBarrier barreraI;
+    CyclicBarrier barreraF;
+
+
+    Hilillo(String inst, int pcHilillo, int pNucleo, CyclicBarrier bi, CyclicBarrier bf) {
         cantInst = inst.split("\n").length;
         pc = pcHilillo;
         nucleo = pNucleo;
         procesador = Procesador.getInstancia(1,5);
         ciclosReloj = 0;
+
+        barreraI = bi;
+        barreraF = bf;
     }
 
+    /**
+     * Lo primero que hace cada hilillo es leer la primera instrucción. Una vez hecho, la ejecuta
+     */
     @Override
-    //Lo primero que hace cada hilillo es leer la primera instrucción. Una vez hecho, la ejecuta
     public void run() {
+        try { // Sincroniza que los hilos inicien todos a la vez
+            barreraI.await(); // Se queda bloqueado hasta que todos los hilos hagan este llamado.
+            System.out.println("Hilos se ejecutan");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         int bloque, posCacheI, estadoHilillo = 1, numPalabra;
 
         while (estadoHilillo != 0) {
@@ -44,7 +62,19 @@ public class Hilillo extends Thread {
             estadoHilillo = procesador.ALU(IR, this);
             ciclosReloj++;
         }
+
+        try {
+            barreraF.await();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public int getNucleo() { return nucleo; }
+    /**
+     * Retorna el nucleo.
+     * @return
+     */
+    public int getNucleo() {
+        return nucleo;
+    }
 }
