@@ -17,15 +17,15 @@ public class Hilillo extends Thread {
     CyclicBarrier barreraF;
 
 
-    Hilillo(String inst, int pcHilillo, int pNucleo, CyclicBarrier bi, CyclicBarrier bf) {
+    Hilillo(String inst, int pcHilillo, int pNucleo, CyclicBarrier bai, CyclicBarrier baf) {
         cantInst = inst.split("\n").length;
         pc = pcHilillo;
         nucleo = pNucleo;
         procesador = Procesador.getInstancia(1,5);
         ciclosReloj = 0;
 
-        barreraI = bi;
-        barreraF = bf;
+        barreraI = bai;
+        barreraF = baf;
     }
 
     /**
