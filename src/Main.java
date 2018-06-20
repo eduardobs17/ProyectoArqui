@@ -10,6 +10,10 @@ import java.util.concurrent.CyclicBarrier;
 
 public class Main {
 
+    /**
+     * Metodo principal que inicia el programa.
+     * @param argv
+     */
     public static void main(String[] argv) {
         System.out.println("SIMULACION PROCESADOR MULTINUCLEO\n");
 
@@ -23,12 +27,12 @@ public class Main {
         quantum = reader.nextInt();
 
         Procesador procesador = Procesador.getInstancia(cantHilos, quantum);
-        Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
-        Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
+        Queue<String> colaHilos = new ArrayDeque<>(cantHilos+1);
+        Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos+1);
 
         // Doble barrera
-        CyclicBarrier barreraI = new CyclicBarrier(cantHilos + 1);
-        CyclicBarrier barreraF = new CyclicBarrier(cantHilos + 1);
+        CyclicBarrier barreraI = new CyclicBarrier(cantHilos);
+        CyclicBarrier barreraF = new CyclicBarrier(cantHilos);
 
         for (int i = 0; i < cantHilos; i++) {
             String rutaHilo = i + ".txt";
@@ -67,13 +71,19 @@ public class Main {
             br = new BufferedReader(fr);
 
             String linea;
-            while((linea = br.readLine()) != null) { instrucciones += linea + "\n"; }
+            while((linea = br.readLine()) != null) {
+                instrucciones += linea + "\n"; //Concatena cada instruccion y agrega un \n al final.
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
-                if ( null != fr ) { fr.close(); }
-            } catch (Exception e2){ e2.printStackTrace(); }
+                if ( null != fr ) {
+                    fr.close();
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
         }
         return instrucciones;
     }

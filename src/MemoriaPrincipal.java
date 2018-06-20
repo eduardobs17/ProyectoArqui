@@ -35,6 +35,7 @@ public class MemoriaPrincipal {
 
     /**
      * Metodo Singleton
+     * Controla que solo se maneje una instancia de memoria en el programa.
      * @return
      */
     public static MemoriaPrincipal getInstancia() {
@@ -53,14 +54,15 @@ public class MemoriaPrincipal {
     }
 
     /**
-     * Metodo para agregar las instrucciones en la memoria principal de instrucciones.
+     * Una vez leido el archivo  y colocado las instrucciones en una string, este metodo es llamado
+     * para agregar las instrucciones en la memoria principal de instrucciones.
      * @param instrucciones
      */
     public int agregarInst(String instrucciones) {
         int valorRetorno = memInstrucciones[iteradorBloqueInstrucciones].direccion[0];
-        String[] inst = instrucciones.split("\n");
+        String[] inst = instrucciones.split("\n"); // Llena el vector inst con la cantidad de instrucciones
         for (int x = 0; x < inst.length; x++) {
-            String[] comandos = inst[x].split(" ");
+            String[] comandos = inst[x].split(" "); // Llena el vector comandos con la cantidad de comandos que tiene la instruccion.
             for (int y = 0; y < comandos.length; y++) {
                 memInstrucciones[iteradorBloqueInstrucciones].palabra[iteradorPalabraInstrucciones] = Integer.parseInt(comandos[y]);
                 iteradorPalabraInstrucciones++;

@@ -6,6 +6,10 @@ class CacheD {
     public boolean[] reservado;
     public Lock[] locks;
 
+    /**
+     * Constructor de cache de datos.
+     * @param nucleo
+     */
     CacheD(int nucleo) {
         if (nucleo == 0) {
             valores = new int[8][6];
@@ -19,7 +23,7 @@ class CacheD {
                 locks[i] = new ReentrantLock();
                 reservado[i] = false;
             }
-        } else {
+        } else { //Si el nucleo es 1.
             valores = new int[4][6];
             locks = new ReentrantLock[4];
             reservado = new boolean[4];

@@ -6,6 +6,10 @@ class CacheI {
     public Lock[] locks;
     public boolean[] reservado;
 
+    /**
+     * Constructor de cache de instrucciones.
+     * @param nucleo
+     */
     CacheI(int nucleo) {
         if (nucleo == 0) {
             valores = new int[8][18];
@@ -19,7 +23,7 @@ class CacheI {
                 locks[i] = new ReentrantLock();
                 reservado[i] = false;
             }
-        } else {
+        } else { //Si el nucle es 1.
             valores = new int[4][18];
             locks = new ReentrantLock[4];
             reservado = new boolean[4];
