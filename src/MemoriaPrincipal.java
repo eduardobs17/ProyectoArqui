@@ -63,7 +63,7 @@ public class MemoriaPrincipal {
      * @param instrucciones String con las instrucciones de todos los hilillos.
      */
     public int agregarInst(String instrucciones) {
-        int valorRetorno = memInstrucciones[iteradorBloqueInstrucciones].direccion[0];
+        int valorRetorno = memInstrucciones[iteradorBloqueInstrucciones].direccion[iteradorPalabraInstrucciones];
         String[] inst = instrucciones.split("\n"); // Llena el vector inst con la cantidad de instrucciones
         for (int x = 0; x < inst.length; x++) {
             String[] comandos = inst[x].split(" "); // Llena el vector comandos con la cantidad de comandos que tiene la instruccion.

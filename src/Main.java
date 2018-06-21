@@ -29,8 +29,16 @@ public class Main {
         Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
         Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
 
-        CyclicBarrier barreraI = new CyclicBarrier(cantHilos);
-        CyclicBarrier barreraF = new CyclicBarrier(cantHilos);
+
+        CyclicBarrier barreraI, barreraF;
+        //Maximo 4
+        if (cantHilos < 3) {
+            barreraI = new CyclicBarrier(cantHilos + 1);
+            barreraF = new CyclicBarrier(cantHilos + 1);
+        } else {
+            barreraI = new CyclicBarrier(4);
+            barreraF = new CyclicBarrier(4);
+        }
 
         for (int i = 0; i < cantHilos; i++) {
             String rutaHilo = i + ".txt";

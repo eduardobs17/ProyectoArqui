@@ -3,19 +3,19 @@ import java.util.concurrent.CyclicBarrier;
 public class Hilillo extends Thread {
     private Procesador procesador;
     private int nucleo;
-    private int cantInst;
     private String instrucciones;
+    private int estadoHilillo;
 
     public int[] registro = new int[32];
     private int[] IR = new int[4];
-    public int[] estado = new int[4];
+    //public int[] estado = new int[4];
 
     public int pc;
     public int ciclosReloj;
     public int quantum;
 
-    CyclicBarrier barreraI;
-    CyclicBarrier barreraF;
+    private CyclicBarrier barreraI;
+    private CyclicBarrier barreraF;
 
     /**
      * Constructor del hilillo.
@@ -26,11 +26,11 @@ public class Hilillo extends Thread {
      * @param baf Barrera de final para que los hilillos finalicen a la vez.
      */
     Hilillo(String inst, int pcHilillo, int pNucleo, CyclicBarrier bai, CyclicBarrier baf) {
-        cantInst = inst.split("\n").length;
         pc = pcHilillo;
         nucleo = pNucleo;
         procesador = Procesador.getInstancia(1,1);
         ciclosReloj = 0;
+        estadoHilillo = 1;
 
         barreraI = bai;
         barreraF = baf;
@@ -49,10 +49,9 @@ public class Hilillo extends Thread {
             e.printStackTrace();
         }
 
-        int bloque, posCacheI, estadoHilillo = 1, numPalabra;
+        int bloque, posCacheI, numPalabra;
 
         while (estadoHilillo != 0) {
-            System.out.println("Hilillo " + nucleo + ", estado " + estadoHilillo);
             bloque = pc / 16;
             numPalabra = pc - (bloque*16);
             posCacheI = procesador.calcularPosCache(bloque, nucleo);
@@ -69,11 +68,12 @@ public class Hilillo extends Thread {
                 numPalabra++;
             }
             estadoHilillo = procesador.ALU(IR, this);
+            System.out.println("Hilillo " + nucleo + ", estado " + estadoHilillo);
             ciclosReloj++;
         }
 
         try {
-            barreraF.await();
+            //barreraF.await();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -86,4 +86,6 @@ public class Hilillo extends Thread {
     public int getNucleo() {
         return nucleo;
     }
+
+    public int getEstadoHilillo() { return estadoHilillo; }
 }

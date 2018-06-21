@@ -82,24 +82,34 @@ public class Procesador {
      * @param bf Barrera de final para que los hilillos finalicen a la vez.
      */
     public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi, CyclicBarrier bf) {
-        if (!colaHilos.isEmpty()) {
-            hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi, bf);
-            hilo0_1.start();
-        }
-
-        if (!colaHilos.isEmpty()) {
-            hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi, bf);
-            hilo1.start();
-        }
-
-        /*while (!colaHilos.isEmpty()) {
-
-        }*/
         try {
-            System.out.println("Levanto barrera");
-            bi.await();
-            bf.await();
-            System.out.println("Terminado: todos llegan aqui");
+            int x = 0;
+            //System.out.println("Levanto barrera");
+
+            if (!colaHilos.isEmpty()) {
+                hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi, bf);
+                hilo0_1.start();
+            }
+
+            if (!colaHilos.isEmpty()) {
+                hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi, bf);
+                hilo1.start();
+            }
+
+            while (true) {
+                x++;
+                bi.await();
+            }
+            /*while (!colaHilos.isEmpty()) {
+
+            }*/
+
+
+
+
+            //bf.await();
+
+            //System.out.println("Terminado: todos llegan aqui");
         } catch (Exception e) {
             e.printStackTrace();
         }
