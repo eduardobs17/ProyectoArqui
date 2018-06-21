@@ -88,4 +88,9 @@ public class Hilillo extends Thread {
     }
 
     public int getEstadoHilillo() { return estadoHilillo; }
+
+    public void cambiarBarrera(CyclicBarrier newBarreraI, CyclicBarrier newBarreraF) {
+        barreraI = newBarreraI;
+        barreraF = newBarreraF;
+    }
 }

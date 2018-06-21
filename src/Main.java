@@ -29,7 +29,6 @@ public class Main {
         Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
         Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
 
-
         CyclicBarrier barreraI, barreraF;
         //Maximo 4
         if (cantHilos < 3) {
