@@ -81,7 +81,7 @@ public class Hilillo extends Thread {
 
     /**
      * Retorna el nucleo.
-     * @return Devuelve el nucleo.
+     * @return Devuelve el nucleo del hilillo.
      */
     public int getNucleo() {
         return nucleo;
