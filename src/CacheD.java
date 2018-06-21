@@ -8,7 +8,7 @@ class CacheD {
 
     /**
      * Constructor de cache de datos.
-     * @param nucleo
+     * @param nucleo Es el nucleo al que pertenece la cache de datos.
      */
     CacheD(int nucleo) {
         if (nucleo == 0) {

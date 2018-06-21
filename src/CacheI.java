@@ -8,7 +8,7 @@ class CacheI {
 
     /**
      * Constructor de cache de instrucciones.
-     * @param nucleo
+     * @param nucleo Es el nucleo al que pertenece la cache de instrucciones.
      */
     CacheI(int nucleo) {
         if (nucleo == 0) {

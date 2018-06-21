@@ -9,7 +9,7 @@ public class MemoriaPrincipal {
     private static MemoriaPrincipal memoria;
 
     /**
-     * Constructor
+     * Constructor de Memoria principal.
      * Se inicializa en unos la memoria de datos e instrucciones
      */
     private MemoriaPrincipal () {
@@ -34,9 +34,9 @@ public class MemoriaPrincipal {
     }
 
     /**
-     * Metodo Singleton
+     * Metodo Singleton para controlar que solo se cree un objeto memoriaPrincipal.
      * Controla que solo se maneje una instancia de memoria en el programa.
-     * @return
+     * @return Devuelve la memoria si esta ya existe.
      */
     public static MemoriaPrincipal getInstancia() {
         if (memoria == null) {
@@ -45,6 +45,10 @@ public class MemoriaPrincipal {
         return memoria;
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public MemoriaPrincipal clone() {
         try {
@@ -56,7 +60,7 @@ public class MemoriaPrincipal {
     /**
      * Una vez leido el archivo  y colocado las instrucciones en una string, este metodo es llamado
      * para agregar las instrucciones en la memoria principal de instrucciones.
-     * @param instrucciones
+     * @param instrucciones String con las instrucciones de todos los hilillos.
      */
     public int agregarInst(String instrucciones) {
         int valorRetorno = memInstrucciones[iteradorBloqueInstrucciones].direccion[0];

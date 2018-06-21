@@ -17,6 +17,14 @@ public class Hilillo extends Thread {
     CyclicBarrier barreraI;
     CyclicBarrier barreraF;
 
+    /**
+     * Constructor del hilillo.
+     * @param inst String con las instrucciones del hilillo.
+     * @param pcHilillo PC del hilillo.
+     * @param pNucleo Nucleo del hilillo.
+     * @param bai Barrera de inicio para que los hilillos inicien a la vez.
+     * @param baf Barrera de final para que los hilillos finalicen a la vez.
+     */
     Hilillo(String inst, int pcHilillo, int pNucleo, CyclicBarrier bai, CyclicBarrier baf) {
         cantInst = inst.split("\n").length;
         pc = pcHilillo;
@@ -73,7 +81,7 @@ public class Hilillo extends Thread {
 
     /**
      * Retorna el nucleo.
-     * @return
+     * @return Devuelve el nucleo.
      */
     public int getNucleo() {
         return nucleo;

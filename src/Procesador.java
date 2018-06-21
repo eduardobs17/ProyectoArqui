@@ -27,8 +27,8 @@ public class Procesador {
     /**
      * Constructor
      * Se inicializa en ceros el contexto y las caches.
-     * @param cant
-     * @param tamQuantum
+     * @param cant Cantidad de hilillos que se van a ejecutar.
+     * @param tamQuantum Tamaño del quantum del hilillo.
      */
     private Procesador(int cant, int tamQuantum) {
         memoria = MemoriaPrincipal.getInstancia();
@@ -49,6 +49,12 @@ public class Procesador {
         }
     }
 
+    /**
+     * Metodo Singleton para controlar que solo se cree un objeto procesador.
+     * @param cantH Cantidad de hilillos que se van a ejecutar.
+     * @param tamQ Tamaño de quantum del hilillo.
+     * @return Devuelve el procesador si este ya existe.
+     */
     public static Procesador getInstancia(int cantH, int tamQ) {
         if (procesador == null) {
             procesador = new Procesador(cantH, tamQ);
@@ -56,6 +62,10 @@ public class Procesador {
         return procesador;
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public Procesador clone() {
         try {
@@ -64,6 +74,13 @@ public class Procesador {
         return null;
     }
 
+    /**
+     * Metodo que inicia el programa y manda a ejecutar los hilillos.
+     * @param colaHilos Cola que contiene string con las instrucciones de todos los hilillos.
+     * @param colaPCs Cola que contiene el PC de todos los hilillos.
+     * @param bi Barrera de inicio para que los hilillos inicien a la vez.
+     * @param bf Barrera de final para que los hilillos finalicen a la vez.
+     */
     public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi, CyclicBarrier bf) {
         if (!colaHilos.isEmpty()) {
             hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi, bf);
@@ -88,6 +105,12 @@ public class Procesador {
         }
     }
 
+    /**
+     * Metodo que contiene la logica de las instrucciones.
+     * @param instruccion Es el IR (instruccion actual) del hilillo.
+     * @param h Es el hilillo.
+     * @return Devuelve el PC del hilillo.
+     */
     public int ALU (int instruccion[], Hilillo h) {
         int y = instruccion[0];
         switch (y) {
@@ -139,6 +162,13 @@ public class Procesador {
         return 1;
     }
 
+    /**
+     * Metodo para LoadD que carga datos de memoria a registro, toma en cuenta los fallos de cache.
+     * @param registro El numero de registro en el cual debe escribir.
+     * @param posMemoria Posicion de memoria del bloque.
+     * @param nucleo Nucleo del hilillo.
+     * @param registros Los registros del hilillo.
+     */
     private void loadD (int registro, int posMemoria, int nucleo, int[] registros) {
         int bloque = posMemoria / 16;
         int palabra = (posMemoria % 16) / 4;
@@ -257,6 +287,13 @@ public class Procesador {
         }
     }
 
+    /**
+     * Metodo StoreD para cargar datos de registro a memoria, toma en cuenta los fallos de cache.
+     * @param registro Registro desde el cual se va a escribir en memoria.
+     * @param posMemoria Posicion de memoria del bloque.
+     * @param nucleo Nucleo del hilillo.
+     * @param registros Los registros del hilillo.
+     */
     private void storeD (int registro, int posMemoria, int nucleo, int[] registros) {
         int bloque = posMemoria / 16;
         int palabra = (posMemoria % 16) / 4;
@@ -376,6 +413,13 @@ public class Procesador {
         }
     }
 
+    /**
+     * Metodo LoadI para cargar las instrucciones de la memoria a la cache, toma en cuenta los fallos de cache.
+     * @param nucleo Nucleo del hilillo.
+     * @param posCache Posicion en la cache.
+     * @param posMem PC del hilillo (posicion en memoria).
+     * @param h Es el hilillo.
+     */
     public void loadI (int nucleo, int posCache, int posMem, Hilillo h) {
         int bloqueMem = posMem / 16;
         int bloqueEnMemoria = bloqueMem - 24;
@@ -421,6 +465,11 @@ public class Procesador {
         }
     }
 
+    /**
+     * Metodo para llenar el PC del hilillo en su propio contexto.
+     * @param fila El numero del hilillo.
+     * @param pc PC del hilillo.
+     */
     public void llenarContextopc(int fila, int pc) {
         contexto[fila][32] = pc;
     }
@@ -439,6 +488,10 @@ public class Procesador {
         }
     }
 
+    /**
+     * Copia el bloque desde la cache a la memoria de datos.
+     * @param array Es el bloque que esta en la cache.
+     */
     private void guardarBloqueEnMemoriaD(int[] array) {
         int bloque = array[4];
         System.arraycopy(array, 0, memoria.memDatos[bloque].palabra, 0, 4);
