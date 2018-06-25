@@ -54,7 +54,7 @@ public class Hilillo extends Thread {
         while (estadoHilillo != 0) {
             bloque = pc / 16;
             numPalabra = pc - (bloque*16);
-            posCacheI = procesador.calcularPosCache(bloque, nucleo);
+            posCacheI = procesador.calcularPosCache(bloque);
 
             if (procesador.cacheInstrucciones[nucleo].valores[posCacheI][16] != bloque
                     || (procesador.cacheInstrucciones[nucleo].valores[posCacheI][16] == bloque
@@ -70,6 +70,7 @@ public class Hilillo extends Thread {
             estadoHilillo = procesador.ALU(IR, this);
             System.out.println("Hilillo " + nucleo + ", estado " + estadoHilillo);
             ciclosReloj++;
+            procesador.aumentarCiclosReloj(ciclosReloj);
         }
 
         try {

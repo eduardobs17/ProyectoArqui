@@ -17,6 +17,7 @@ public class Procesador {
     private Hilillo hilo1 = null;
 
     public final int cantHilos, quantum;
+    private int ciclosReloj;
 
     private int contexto[][];
     public CacheD[] cacheDatos = new CacheD[2];
@@ -34,6 +35,7 @@ public class Procesador {
         memoria = MemoriaPrincipal.getInstancia();
         cantHilos = cant;
         quantum = tamQuantum;
+        ciclosReloj = 0;
 
         cacheDatos[0] = new CacheD(0);
         cacheDatos[1] = new CacheD(1);
@@ -137,10 +139,6 @@ public class Procesador {
                         return;
                     }
                 }
-
-                //bf.await();
-
-                //System.out.println("Terminado: todos llegan aqui");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -215,7 +213,7 @@ public class Procesador {
         int bloque = posMemoria / 16;
         int palabra = (posMemoria % 16) / 4;
 
-        int posCache = calcularPosCache(bloque, nucleo);
+        int posCache = calcularPosCache(bloque);
         int otroNucleo = (nucleo + 1) % 2;
 
         CacheD copiaCache = cacheDatos[nucleo];
@@ -238,7 +236,7 @@ public class Procesador {
                     if (!busD.isLocked()) {                                                             //Se revisa estado del bus
                         busD.tryLock();
                         try {
-                            int posCache2 = calcularPosCache(bloque, otroNucleo);
+                            int posCache2 = calcularPosCache(bloque);
 
                             if (!copiaOtraCache.reservado[posCache2]) {
                                 copiaOtraCache.reservado[posCache2] = true;
@@ -249,6 +247,9 @@ public class Procesador {
                                         copiaCache.locks[posCache].tryLock();
                                         try {
                                             guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
+                                            /*for (int i = 0; i < 40; i++) {
+                                                  ciclosReloj += 1;
+                                            }*/
                                             guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache2, copiaCache, posCache);
                                         } finally {
                                             copiaOtraCache.locks[posCache2].unlock();
@@ -258,6 +259,9 @@ public class Procesador {
                                         copiaCache.locks[posCache].tryLock();
                                         try {
                                             guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                            /*for (int i = 0; i < 40; i++) {
+                                                  ciclosReloj += 1;
+                                            }*/
                                         } finally {
                                             copiaCache.locks[posCache].unlock();
                                         }
@@ -266,6 +270,9 @@ public class Procesador {
                                     copiaCache.locks[posCache].tryLock();
                                     try {
                                         guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                        /*for (int i = 0; i < 40; i++) {
+                                              ciclosReloj += 1;
+                                          }*/
                                     } finally {
                                         copiaCache.locks[posCache].unlock();
                                     }
@@ -285,12 +292,15 @@ public class Procesador {
                 //Se revisa bloque victima
                 if (copiaCache.valores[posCache][5] == 2) {
                     guardarBloqueEnMemoriaD(copiaCache.valores[posCache]);
+                    /*for (int i = 0; i < 40; i++) {
+                          ciclosReloj += 1;
+                      }*/
                 }
 
                 if (!busD.isLocked()) {                                                                 //Se revisa estado del bus
                     busD.tryLock();
                     try {
-                        int posCache2 = calcularPosCache(bloque, otroNucleo);
+                        int posCache2 = calcularPosCache(bloque);
 
                         if (!copiaOtraCache.reservado[posCache2]) {
                             copiaOtraCache.reservado[posCache2] = true;
@@ -301,6 +311,9 @@ public class Procesador {
                                     copiaCache.locks[posCache].tryLock();
                                     try {
                                         guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
+                                        /*for (int i = 0; i < 40; i++) {
+                                              ciclosReloj += 1;
+                                          }*/
                                         guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache2, copiaCache, posCache);
                                     } finally {
                                         copiaOtraCache.locks[posCache2].unlock();
@@ -311,6 +324,9 @@ public class Procesador {
                                 copiaCache.locks[posCache].tryLock();
                                 try {
                                     guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                    /*for (int i = 0; i < 40; i++) {
+                                          ciclosReloj += 1;
+                                      }*/
                                 } finally {
                                     copiaCache.locks[posCache].unlock();
                                 }
@@ -340,7 +356,7 @@ public class Procesador {
         int bloque = posMemoria / 16;
         int palabra = (posMemoria % 16) / 4;
 
-        int posCache = calcularPosCache(bloque, nucleo);
+        int posCache = calcularPosCache(bloque);
         int otroNucleo = (nucleo + 1) % 2;
 
         CacheD copiaCache = cacheDatos[nucleo];
@@ -361,7 +377,7 @@ public class Procesador {
                     if (!busD.isLocked()) {
                         busD.tryLock();
                         try {
-                            int posCache2 = calcularPosCache(bloque, otroNucleo);
+                            int posCache2 = calcularPosCache(bloque);
 
                             if (!copiaOtraCache.reservado[posCache2]) {
                                 copiaOtraCache.reservado[posCache2] = true;
@@ -399,12 +415,15 @@ public class Procesador {
                 if (copiaCache.valores[posCache][5] == 2) {
                     //Se debe reservar el bus
                     guardarBloqueEnMemoriaD(copiaCache.valores[posCache]);
+                    /*for (int i = 0; i < 40; i++) {
+                          ciclosReloj += 1;
+                      }*/
                 }
 
                 if (!busD.isLocked()) {
                     busD.tryLock();
                     try {
-                        int posCache2 = calcularPosCache(bloque, otroNucleo);
+                        int posCache2 = calcularPosCache(bloque);
 
                         if (!copiaOtraCache.reservado[posCache2]) {
                             copiaOtraCache.reservado[posCache2] = true;
@@ -415,6 +434,9 @@ public class Procesador {
                                     copiaCache.locks[posCache].tryLock();
                                     try {
                                         guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
+                                        /*for (int i = 0; i < 40; i++) {
+                                              ciclosReloj += 1;
+                                          }*/
                                         guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache2, copiaCache, posCache);
                                         copiaCache.valores[posCache][palabra] = registros[registro];
                                         copiaCache.valores[posCache][5] = 2;
@@ -427,6 +449,9 @@ public class Procesador {
                                     copiaCache.locks[posCache].tryLock();
                                     try {
                                         guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                        /*for (int i = 0; i < 40; i++) {
+                                              ciclosReloj += 1;
+                                          }*/
                                         copiaCache.valores[posCache][palabra] = registros[registro];
                                         copiaCache.valores[posCache][5] = 2;
                                         copiaOtraCache.valores[posCache2][5] = 0;
@@ -438,6 +463,9 @@ public class Procesador {
                                 copiaCache.locks[posCache].tryLock();
                                 try {
                                     guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                    /*for (int i = 0; i < 40; i++) {
+                                          ciclosReloj += 1;
+                                      }*/
                                     copiaCache.valores[posCache][palabra] = registros[registro];
                                     copiaCache.valores[posCache][5] = 2;
                                 } finally {
@@ -519,15 +547,10 @@ public class Procesador {
     /**
      * Calcula la posición de un bloque en una cache usando el algoritmo de Mapeo Directo.
      * @param numeroBloque El numero del bloque que se quiere calcular.
-     * @param nucleo El nucleo en el que se ubica la cache en la que se quiere copiar el bloque.
      * @return La posicion en la cache en la que se guardara el bloque.
      */
-    public int calcularPosCache(int numeroBloque, int nucleo) {
-        if (nucleo == 0) {
-            return numeroBloque % 8;
-        } else {
-            return numeroBloque % 4;
-        }
+    public int calcularPosCache(int numeroBloque) {
+        return numeroBloque % 4;
     }
 
     /**
@@ -562,5 +585,9 @@ public class Procesador {
         System.arraycopy(memoria.memDatos[numBloque].palabra, 0, cache.valores[posCache], 0, 4);
         cache.valores[posCache][4] = numBloque;
         cache.valores[posCache][5] = 1;
+    }
+
+    public void aumentarCiclosReloj(int i) {
+        ciclosReloj = ciclosReloj + 1;
     }
 }

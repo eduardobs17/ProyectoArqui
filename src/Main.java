@@ -31,12 +31,12 @@ public class Main {
 
         CyclicBarrier barreraI, barreraF;
         //Maximo 4
-        if (cantHilos < 3) {
+        if (cantHilos < 2) {
             barreraI = new CyclicBarrier(cantHilos + 1);
             barreraF = new CyclicBarrier(cantHilos + 1);
         } else {
-            barreraI = new CyclicBarrier(4);
-            barreraF = new CyclicBarrier(4);
+            barreraI = new CyclicBarrier(3);
+            barreraF = new CyclicBarrier(3);
         }
 
         for (int i = 0; i < cantHilos; i++) {
