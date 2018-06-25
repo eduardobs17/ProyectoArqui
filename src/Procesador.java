@@ -1,4 +1,5 @@
 import java.util.Queue;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -112,8 +113,7 @@ public class Procesador {
                     }
                 }
                 bi.await();
-
-            } catch (Exception e) {
+            } catch (InterruptedException | BrokenBarrierException e) {
                 e.printStackTrace();
             }
         }

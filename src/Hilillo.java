@@ -1,3 +1,4 @@
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 public class Hilillo extends Thread {
@@ -29,7 +30,6 @@ public class Hilillo extends Thread {
         procesador = Procesador.getInstancia(1,1);
         ciclosReloj = 0;
         estadoHilillo = 1;
-
         barreraI = bai;
     }
 
@@ -60,13 +60,11 @@ public class Hilillo extends Thread {
             estadoHilillo = procesador.ALU(IR, this);
             System.out.println("Hilillo " + nucleo + ", estado " + estadoHilillo);
             ciclosReloj++;
-            procesador.aumentarCiclosReloj();
         }
-
         try {
             barreraI.await(); //Se queda bloqueado hasta que todos los hilos hagan este llamado.
             System.out.println("Hilos se ejecutan");
-        } catch (Exception e) {
+        } catch (InterruptedException | BrokenBarrierException e) {
             e.printStackTrace();
         }
     }
