@@ -8,9 +8,8 @@ class CacheI {
 
     /**
      * Constructor de cache de instrucciones.
-     * @param nucleo Es el nucleo al que pertenece la cache de instrucciones.
      */
-    CacheI(int nucleo) {
+    CacheI() {
         valores = new int[4][18];
         locks = new ReentrantLock[4];
         reservado = new boolean[4];

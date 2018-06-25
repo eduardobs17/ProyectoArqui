@@ -13,7 +13,6 @@ public class Procesador {
     private MemoriaPrincipal memoria;
 
     private Hilillo hilo0_1 = null;
-    private Hilillo hilo0_2 = null;
     private Hilillo hilo1 = null;
 
     public final int cantHilos, quantum;
@@ -37,11 +36,11 @@ public class Procesador {
         quantum = tamQuantum;
         ciclosReloj = 0;
 
-        cacheDatos[0] = new CacheD(0);
-        cacheDatos[1] = new CacheD(1);
+        cacheDatos[0] = new CacheD();
+        cacheDatos[1] = new CacheD();
 
-        cacheInstrucciones[0] = new CacheI(0);
-        cacheInstrucciones[1] = new CacheI(1);
+        cacheInstrucciones[0] = new CacheI();
+        cacheInstrucciones[1] = new CacheI();
 
         contexto = new int[cantHilos][33];
         for (int i = 0; i < cantHilos; i++) {
@@ -64,10 +63,6 @@ public class Procesador {
         return procesador;
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public Procesador clone() {
         try {
@@ -101,21 +96,6 @@ public class Procesador {
                     int aux = bi.getParties();
                     bi = new CyclicBarrier(aux - 1);
                     bf = new CyclicBarrier(aux - 1);
-                    if (hilo0_2 != null) {
-                        hilo0_2.cambiarBarrera(bi, bf);
-                    }
-                    if (hilo1 != null) {
-                        hilo1.cambiarBarrera(bi, bf);
-                    }
-                }
-                if (hilo0_2 != null && hilo0_2.getEstadoHilillo() == 0) {
-                    hilo0_2 = null;
-                    int aux = bi.getParties();
-                    bi = new CyclicBarrier(aux - 1);
-                    bf = new CyclicBarrier(aux - 1);
-                    if (hilo0_1 != null) {
-                        hilo0_1.cambiarBarrera(bi, bf);
-                    }
                     if (hilo1 != null) {
                         hilo1.cambiarBarrera(bi, bf);
                     }
@@ -125,16 +105,13 @@ public class Procesador {
                     int aux = bi.getParties();
                     bi = new CyclicBarrier(aux - 1);
                     bf = new CyclicBarrier(aux - 1);
-                    if (hilo0_2 != null) {
-                        hilo0_2.cambiarBarrera(bi, bf);
-                    }
                     if (hilo0_1 != null) {
                         hilo0_1.cambiarBarrera(bi, bf);
                     }
                 }
                 bi.await();
 
-                if (hilo0_1 == null && hilo0_2 == null && hilo1 == null) {
+                if (hilo0_1 == null && hilo1 == null) {
                     if (colaHilos.isEmpty()) {
                         return;
                     }
@@ -213,7 +190,7 @@ public class Procesador {
         int bloque = posMemoria / 16;
         int palabra = (posMemoria % 16) / 4;
 
-        int posCache = calcularPosCache(bloque);
+        int posCache = bloque % 4;
         int otroNucleo = (nucleo + 1) % 2;
 
         CacheD copiaCache = cacheDatos[nucleo];
@@ -236,23 +213,21 @@ public class Procesador {
                     if (!busD.isLocked()) {                                                             //Se revisa estado del bus
                         busD.tryLock();
                         try {
-                            int posCache2 = calcularPosCache(bloque);
+                            if (!copiaOtraCache.reservado[posCache]) {
+                                copiaOtraCache.reservado[posCache] = true;
 
-                            if (!copiaOtraCache.reservado[posCache2]) {
-                                copiaOtraCache.reservado[posCache2] = true;
-
-                                if (copiaOtraCache.valores[posCache2][4] == bloque) {
+                                if (copiaOtraCache.valores[posCache][4] == bloque) {
                                     if (copiaOtraCache.valores[posCache][5] == 2) {
-                                        copiaOtraCache.locks[posCache2].tryLock();
+                                        copiaOtraCache.locks[posCache].tryLock();
                                         copiaCache.locks[posCache].tryLock();
                                         try {
                                             guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
                                             /*for (int i = 0; i < 40; i++) {
-                                                  ciclosReloj += 1;
+                                                  ciclosReloj++;
                                             }*/
-                                            guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache2, copiaCache, posCache);
+                                            guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache, copiaCache, posCache);
                                         } finally {
-                                            copiaOtraCache.locks[posCache2].unlock();
+                                            copiaOtraCache.locks[posCache].unlock();
                                             copiaCache.locks[posCache].unlock();
                                         }
                                     } else  {
@@ -278,7 +253,7 @@ public class Procesador {
                                     }
                                 }
                                 registros[registro] = copiaCache.valores[posCache][palabra];
-                                copiaOtraCache.reservado[posCache2] = false;
+                                copiaOtraCache.reservado[posCache] = false;
                             }
                         } finally {
                             busD.unlock();
@@ -300,23 +275,21 @@ public class Procesador {
                 if (!busD.isLocked()) {                                                                 //Se revisa estado del bus
                     busD.tryLock();
                     try {
-                        int posCache2 = calcularPosCache(bloque);
+                        if (!copiaOtraCache.reservado[posCache]) {
+                            copiaOtraCache.reservado[posCache] = true;
 
-                        if (!copiaOtraCache.reservado[posCache2]) {
-                            copiaOtraCache.reservado[posCache2] = true;
-
-                            if (copiaOtraCache.valores[posCache2][4] == bloque) {
-                                if (copiaOtraCache.valores[posCache2][5] == 2) {
-                                    copiaOtraCache.locks[posCache2].tryLock();
+                            if (copiaOtraCache.valores[posCache][4] == bloque) {
+                                if (copiaOtraCache.valores[posCache][5] == 2) {
+                                    copiaOtraCache.locks[posCache].tryLock();
                                     copiaCache.locks[posCache].tryLock();
                                     try {
                                         guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
                                         /*for (int i = 0; i < 40; i++) {
-                                              ciclosReloj += 1;
+                                              ciclosReloj++;
                                           }*/
-                                        guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache2, copiaCache, posCache);
+                                        guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache, copiaCache, posCache);
                                     } finally {
-                                        copiaOtraCache.locks[posCache2].unlock();
+                                        copiaOtraCache.locks[posCache].unlock();
                                         copiaCache.locks[posCache].unlock();
                                     }
                                 }
@@ -332,7 +305,7 @@ public class Procesador {
                                 }
                             }
                             registros[registro] = copiaCache.valores[posCache][palabra];
-                            copiaOtraCache.reservado[posCache2] = false;
+                            copiaOtraCache.reservado[posCache] = false;
                         }
                     } finally {
                         busD.unlock();
@@ -356,7 +329,7 @@ public class Procesador {
         int bloque = posMemoria / 16;
         int palabra = (posMemoria % 16) / 4;
 
-        int posCache = calcularPosCache(bloque);
+        int posCache = bloque % 4;
         int otroNucleo = (nucleo + 1) % 2;
 
         CacheD copiaCache = cacheDatos[nucleo];
@@ -377,12 +350,10 @@ public class Procesador {
                     if (!busD.isLocked()) {
                         busD.tryLock();
                         try {
-                            int posCache2 = calcularPosCache(bloque);
+                            if (!copiaOtraCache.reservado[posCache]) {
+                                copiaOtraCache.reservado[posCache] = true;
 
-                            if (!copiaOtraCache.reservado[posCache2]) {
-                                copiaOtraCache.reservado[posCache2] = true;
-
-                                if (copiaOtraCache.valores[posCache2][4] == bloque) {
+                                if (copiaOtraCache.valores[posCache][4] == bloque) {
                                     if (copiaOtraCache.valores[posCache][5] == 0) {
                                         copiaCache.locks[posCache].tryLock();
                                         try {
@@ -392,18 +363,18 @@ public class Procesador {
                                         }
                                     } else if (copiaOtraCache.valores[posCache][5] == 1) {
                                         copiaCache.locks[posCache].tryLock();
-                                        copiaOtraCache.locks[posCache2].tryLock();
+                                        copiaOtraCache.locks[posCache].tryLock();
                                         try {
-                                            copiaOtraCache.valores[posCache2][5] = 0;
+                                            copiaOtraCache.valores[posCache][5] = 0;
                                             copiaCache.valores[posCache][palabra] = registros[registro];
                                             copiaCache.valores[posCache][5] = 2;
                                         } finally {
                                             copiaCache.locks[posCache].unlock();
-                                            copiaOtraCache.locks[posCache2].unlock();
+                                            copiaOtraCache.locks[posCache].unlock();
                                         }
                                     }
                                 }
-                                copiaOtraCache.reservado[posCache2] = false;
+                                copiaOtraCache.reservado[posCache] = false;
                             }
                         } finally {
                             busD.unlock();
@@ -423,26 +394,24 @@ public class Procesador {
                 if (!busD.isLocked()) {
                     busD.tryLock();
                     try {
-                        int posCache2 = calcularPosCache(bloque);
+                        if (!copiaOtraCache.reservado[posCache]) {
+                            copiaOtraCache.reservado[posCache] = true;
 
-                        if (!copiaOtraCache.reservado[posCache2]) {
-                            copiaOtraCache.reservado[posCache2] = true;
-
-                            if (copiaOtraCache.valores[posCache2][4] == bloque) {
-                                if (copiaOtraCache.valores[posCache2][5] == 2) {
-                                    copiaOtraCache.locks[posCache2].tryLock();
+                            if (copiaOtraCache.valores[posCache][4] == bloque) {
+                                if (copiaOtraCache.valores[posCache][5] == 2) {
+                                    copiaOtraCache.locks[posCache].tryLock();
                                     copiaCache.locks[posCache].tryLock();
                                     try {
                                         guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
                                         /*for (int i = 0; i < 40; i++) {
                                               ciclosReloj += 1;
                                           }*/
-                                        guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache2, copiaCache, posCache);
+                                        guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache, copiaCache, posCache);
                                         copiaCache.valores[posCache][palabra] = registros[registro];
                                         copiaCache.valores[posCache][5] = 2;
-                                        copiaOtraCache.valores[posCache2][5] = 0;
+                                        copiaOtraCache.valores[posCache][5] = 0;
                                     } finally {
-                                        copiaOtraCache.locks[posCache2].unlock();
+                                        copiaOtraCache.locks[posCache].unlock();
                                         copiaCache.locks[posCache].unlock();
                                     }
                                 } else {
@@ -454,7 +423,7 @@ public class Procesador {
                                           }*/
                                         copiaCache.valores[posCache][palabra] = registros[registro];
                                         copiaCache.valores[posCache][5] = 2;
-                                        copiaOtraCache.valores[posCache2][5] = 0;
+                                        copiaOtraCache.valores[posCache][5] = 0;
                                     } finally {
                                         copiaCache.locks[posCache].unlock();
                                     }
@@ -472,7 +441,7 @@ public class Procesador {
                                     copiaCache.locks[posCache].unlock();
                                 }
                             }
-                            copiaOtraCache.reservado[posCache2] = false;
+                            copiaOtraCache.reservado[posCache] = false;
                         }
                     } finally {
                         busD.unlock();
@@ -542,15 +511,6 @@ public class Procesador {
      */
     public void llenarContextopc(int fila, int pc) {
         contexto[fila][32] = pc;
-    }
-
-    /**
-     * Calcula la posición de un bloque en una cache usando el algoritmo de Mapeo Directo.
-     * @param numeroBloque El numero del bloque que se quiere calcular.
-     * @return La posicion en la cache en la que se guardara el bloque.
-     */
-    public int calcularPosCache(int numeroBloque) {
-        return numeroBloque % 4;
     }
 
     /**
