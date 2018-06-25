@@ -59,13 +59,13 @@ public class Hilillo extends Thread {
             }
             estadoHilillo = procesador.ALU(IR, this);
             System.out.println("Hilillo " + nucleo + ", estado " + estadoHilillo);
+            try {
+                barreraI.await(); //Se queda bloqueado hasta que todos los hilos hagan este llamado.
+                System.out.println("Hilos cambian  ciclo de reloj");
+            } catch (InterruptedException | BrokenBarrierException e) {
+                e.printStackTrace();
+            }
             ciclosReloj++;
-        }
-        try {
-            barreraI.await(); //Se queda bloqueado hasta que todos los hilos hagan este llamado.
-            System.out.println("Hilos se ejecutan");
-        } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
         }
     }
 
