@@ -29,14 +29,11 @@ public class Main {
         Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
         Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
 
-        CyclicBarrier barreraI, barreraF;
-        //Maximo 4
-        if (cantHilos < 2) {
-            barreraI = new CyclicBarrier(cantHilos + 1);
-            barreraF = new CyclicBarrier(cantHilos + 1);
+        CyclicBarrier barreraI;
+        if (cantHilos == 1) {
+            barreraI = new CyclicBarrier(2);
         } else {
             barreraI = new CyclicBarrier(3);
-            barreraF = new CyclicBarrier(3);
         }
 
         for (int i = 0; i < cantHilos; i++) {
@@ -47,7 +44,7 @@ public class Main {
             colaHilos.add(inst);
             colaPCs.add(pc);
         }
-        procesador.run(colaHilos, colaPCs, barreraI, barreraF);
+        procesador.run(colaHilos, colaPCs, barreraI);
     }
 
     /**

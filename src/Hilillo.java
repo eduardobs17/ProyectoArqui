@@ -15,7 +15,6 @@ public class Hilillo extends Thread {
     public int quantum;
 
     private CyclicBarrier barreraI;
-    private CyclicBarrier barreraF;
 
     /**
      * Constructor del hilillo.
@@ -23,9 +22,8 @@ public class Hilillo extends Thread {
      * @param pcHilillo PC del hilillo.
      * @param pNucleo Nucleo del hilillo.
      * @param bai Barrera de inicio para que los hilillos inicien a la vez.
-     * @param baf Barrera de final para que los hilillos finalicen a la vez.
      */
-    Hilillo(String inst, int pcHilillo, int pNucleo, CyclicBarrier bai, CyclicBarrier baf) {
+    Hilillo(String inst, int pcHilillo, int pNucleo, CyclicBarrier bai) {
         pc = pcHilillo;
         nucleo = pNucleo;
         procesador = Procesador.getInstancia(1,1);
@@ -33,7 +31,6 @@ public class Hilillo extends Thread {
         estadoHilillo = 1;
 
         barreraI = bai;
-        barreraF = baf;
     }
 
     /**
@@ -42,13 +39,6 @@ public class Hilillo extends Thread {
      */
     @Override
     public void run() {
-        try { //Sincroniza que los hilos inicien todos a la vez.
-            barreraI.await(); //Se queda bloqueado hasta que todos los hilos hagan este llamado.
-            System.out.println("Hilos se ejecutan");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         int bloque, posCacheI, numPalabra;
 
         while (estadoHilillo != 0) {
@@ -70,11 +60,12 @@ public class Hilillo extends Thread {
             estadoHilillo = procesador.ALU(IR, this);
             System.out.println("Hilillo " + nucleo + ", estado " + estadoHilillo);
             ciclosReloj++;
-            procesador.aumentarCiclosReloj(ciclosReloj);
+            procesador.aumentarCiclosReloj();
         }
 
         try {
-            //barreraF.await();
+            barreraI.await(); //Se queda bloqueado hasta que todos los hilos hagan este llamado.
+            System.out.println("Hilos se ejecutan");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -90,8 +81,7 @@ public class Hilillo extends Thread {
 
     public int getEstadoHilillo() { return estadoHilillo; }
 
-    public void cambiarBarrera(CyclicBarrier newBarreraI, CyclicBarrier newBarreraF) {
+    public void cambiarBarrera(CyclicBarrier newBarreraI) {
         barreraI = newBarreraI;
-        barreraF = newBarreraF;
     }
 }

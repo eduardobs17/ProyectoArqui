@@ -12,7 +12,7 @@ public class Procesador {
 
     private MemoriaPrincipal memoria;
 
-    private Hilillo hilo0_1 = null;
+    private Hilillo hilo0 = null;
     private Hilillo hilo1 = null;
 
     public final int cantHilos, quantum;
@@ -76,46 +76,43 @@ public class Procesador {
      * @param colaHilos Cola que contiene string con las instrucciones de todos los hilillos.
      * @param colaPCs Cola que contiene el PC de todos los hilillos.
      * @param bi Barrera de inicio para que los hilillos inicien a la vez.
-     * @param bf Barrera de final para que los hilillos finalicen a la vez.
      */
-    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi, CyclicBarrier bf) {
+    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi) {
         while (true) {
             try {
                 if (!colaHilos.isEmpty()) {
-                    hilo0_1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi, bf);
-                    hilo0_1.start();
+                    hilo0 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi);
+                    hilo0.start();
                 }
 
                 if (!colaHilos.isEmpty()) {
-                    hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi, bf);
+                    hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi);
                     hilo1.start();
                 }
 
-                if (hilo0_1 != null && hilo0_1.getEstadoHilillo() == 0) {
-                    hilo0_1 = null;
+                if (hilo0 != null && hilo0.getEstadoHilillo() == 0) {
+                    hilo0 = null;
                     int aux = bi.getParties();
                     bi = new CyclicBarrier(aux - 1);
-                    bf = new CyclicBarrier(aux - 1);
                     if (hilo1 != null) {
-                        hilo1.cambiarBarrera(bi, bf);
+                        hilo1.cambiarBarrera(bi);
                     }
                 }
                 if (hilo1 != null && hilo1.getEstadoHilillo() == 0) {
                     hilo1 = null;
                     int aux = bi.getParties();
                     bi = new CyclicBarrier(aux - 1);
-                    bf = new CyclicBarrier(aux - 1);
-                    if (hilo0_1 != null) {
-                        hilo0_1.cambiarBarrera(bi, bf);
+                    if (hilo0 != null) {
+                        hilo0.cambiarBarrera(bi);
                     }
                 }
-                bi.await();
-
-                if (hilo0_1 == null && hilo1 == null) {
+                if (hilo0 == null && hilo1 == null) {
                     if (colaHilos.isEmpty()) {
                         return;
                     }
                 }
+                bi.await();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -222,9 +219,9 @@ public class Procesador {
                                         copiaCache.locks[posCache].tryLock();
                                         try {
                                             guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
-                                            /*for (int i = 0; i < 40; i++) {
+                                            for (int i = 0; i < 40; i++) {
                                                   ciclosReloj++;
-                                            }*/
+                                            }
                                             guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache, copiaCache, posCache);
                                         } finally {
                                             copiaOtraCache.locks[posCache].unlock();
@@ -547,7 +544,7 @@ public class Procesador {
         cache.valores[posCache][5] = 1;
     }
 
-    public void aumentarCiclosReloj(int i) {
-        ciclosReloj = ciclosReloj + 1;
+    public void aumentarCiclosReloj() {
+        ciclosReloj = ciclosReloj++;
     }
 }
