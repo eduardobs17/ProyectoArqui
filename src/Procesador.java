@@ -78,55 +78,45 @@ public class Procesador {
      * @param colaPCs Cola que contiene el PC de todos los hilillos.
      * @param bi Barrera de inicio para que los hilillos inicien a la vez.
      */
-    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi) {
-        while(true) {
+    public boolean run(Queue<String> colaHilos, Queue<Integer> colaPCs, CyclicBarrier bi) {
+        boolean res = false;
+        while (res == false) {
             try {
-                if(colaHilos.size() == 1) {
+                if (!colaHilos.isEmpty() && hilo0 == null) {
                     hilo0 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi);
                     hilo0.start();
                 }
-                else if(colaHilos.size() == 2) {
-                    hilo0 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi);
+                if (!colaHilos.isEmpty() && hilo1 == null) {
                     hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi);
-                    hilo0.start();
                     hilo1.start();
                 }
-                else if(colaHilos.size() > 2) {
-                    hilo0 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi);
-                    hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, bi);
-                    hilo0.start();
-                    hilo1.start();
-
-                    if(!colaHilos.isEmpty()) {
-                        if (hilo0 != null && hilo0.getEstadoHilillo() == 0) {
-                            int aux = bi.getParties();
-                            bi = new CyclicBarrier(aux - 1);
-                            if (hilo1 != null) {
-                                hilo1.cambiarBarrera(bi);
-                            }
-                            hilo0 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi);
-                        }
-                        else if(hilo1 != null && hilo1.getEstadoHilillo() == 0) {
-                            int aux = bi.getParties();
-                            bi = new CyclicBarrier(aux - 1);
-                            if (hilo0 != null) {
-                                hilo0.cambiarBarrera(bi);
-                            }
-                            hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, bi);
-                        }
+                if (hilo0 != null && hilo0.getEstadoHilillo() == 0) {
+                    hilo0 = null;
+                    int aux = bi.getParties();
+                    bi = new CyclicBarrier(aux - 1);
+                    if (hilo1 != null) {
+                        hilo1.cambiarBarrera(bi);
+                    }
+                }
+                if (hilo1 != null && hilo1.getEstadoHilillo() == 0) {
+                    hilo1 = null;
+                    int aux = bi.getParties();
+                    bi = new CyclicBarrier(aux - 1);
+                    if (hilo0 != null) {
+                        hilo0.cambiarBarrera(bi);
                     }
                 }
                 if (hilo0 == null && hilo1 == null) {
                     if (colaHilos.isEmpty()) {
-                        return;
+                        res = true;
                     }
                 }
                 bi.await();
-            }
-            catch(InterruptedException | BrokenBarrierException e) {
+            } catch (InterruptedException | BrokenBarrierException e) {
                 e.printStackTrace();
             }
         }
+        return res;
         /*while (true) {
             try {
                 if (!colaHilos.isEmpty()) {

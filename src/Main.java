@@ -44,7 +44,7 @@ public class Main {
             colaHilos.add(inst);
             colaPCs.add(pc);
         }
-        procesador.run(colaHilos, colaPCs, barreraI);
+        boolean r = procesador.run(colaHilos, colaPCs, barreraI);
     }
 
     /**
