@@ -3,8 +3,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.Scanner;
 import java.util.concurrent.CyclicBarrier;
+import javax.swing.*;
 
 /** Clase principal del programa. */
 public class Main {
@@ -14,37 +14,46 @@ public class Main {
      * @param argv Parametros de entrada.
      */
     public static void main(String[] argv) {
-        System.out.println("SIMULACION PROCESADOR MULTINUCLEO\n");
-
-        Scanner reader = new Scanner(System.in);
         int cantHilos, quantum, pc;
+        String verResultados = "";
 
-        System.out.println("Digite la cantidad de hilos que desea que maneje el procesador:");
-        cantHilos = reader.nextInt();
-        System.out.println("Digite el tamaño de quantum que desea:");
-        quantum = reader.nextInt();
+        Object[] elecciones = { "Rapida", "Lenta"};
+        Object eleccion = JOptionPane.showInputDialog(null,
+                "Elija la modalidad de ejecucion", "SIMULACION PROCESADOR MULTINUCLEO",
+                JOptionPane.QUESTION_MESSAGE, null,
+                elecciones, elecciones[0]);
 
-        MemoriaPrincipal memoria = MemoriaPrincipal.getInstancia();
-        Procesador procesador = Procesador.getInstancia(cantHilos, quantum);
-        Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
-        Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
+        if(eleccion == "Rapida") { //Ejecuta los hilos hasta que finalice el proceso.
+            cantHilos = Integer.parseInt(JOptionPane.showInputDialog( "SIMULACION PROCESADOR MULTINUCLEO\n\n" +
+                    "Digite la cantidad de hilos que desea que maneje el procesador"));
+            quantum = Integer.parseInt(JOptionPane.showInputDialog( "SIMULACION PROCESADOR MULTINUCLEO\n\n" +
+                    "Digite el tamaño de quantum que desea"));
 
-        CyclicBarrier barreraI;
-        if (cantHilos == 1) {
-            barreraI = new CyclicBarrier(2);
-        } else {
-            barreraI = new CyclicBarrier(3);
+            MemoriaPrincipal memoria = MemoriaPrincipal.getInstancia();
+            Procesador procesador = Procesador.getInstancia(cantHilos, quantum);
+            Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
+            Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
+
+            CyclicBarrier barreraI;
+            if (cantHilos == 1) {
+                barreraI = new CyclicBarrier(2);
+            } else {
+                barreraI = new CyclicBarrier(3);
+            }
+
+            for (int i = 0; i < cantHilos; i++) {
+                String rutaHilo = i + ".txt";
+                String inst = leerArchivo(rutaHilo);
+                pc = memoria.agregarInst(inst);
+                procesador.llenarContextopc(i, pc);
+                colaHilos.add(inst);
+                colaPCs.add(pc);
+            }
+            boolean r = procesador.run(colaHilos, colaPCs, barreraI);
         }
-
-        for (int i = 0; i < cantHilos; i++) {
-            String rutaHilo = i + ".txt";
-            String inst = leerArchivo(rutaHilo);
-            pc = memoria.agregarInst(inst);
-            procesador.llenarContextopc(i, pc);
-            colaHilos.add(inst);
-            colaPCs.add(pc);
+        else {
+            JOptionPane.showMessageDialog(null, "Aqui llega hasta el ciclo de reloj 20");
         }
-        boolean r = procesador.run(colaHilos, colaPCs, barreraI);
     }
 
     /**
