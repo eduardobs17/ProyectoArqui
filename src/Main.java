@@ -42,13 +42,41 @@ public class Main {
             colaPCs.add(pc);
         }
         //procesador.run(colaHilos, colaPCs, barreraInicio, barreraFinal);
-        //JOptionPane.showMessageDialog(null, "Holi");
 
         if (eleccion == "Rapida") {
             procesador.runRapida(colaHilos, colaPCs, barreraInicio, barreraFinal);
         } else {
             procesador.runLenta(colaHilos, colaPCs, barreraInicio, barreraFinal);
         }
+
+        //IMPRIMIR MEMORIA
+        String mi = "MEMORIA DE INSTRUCCIONES\n\n";
+        String md = "MEMORIA DE DATOS\n\n";
+        for (int i = 0; i < 24; i++) {
+            for(int j = 0; j < 4; j++) {
+                md = md + memoria.memDatos[i].palabra[j] + "     ";
+            }
+            md = md + "\n";
+        }
+        md = md + "\n\n";
+        for (int i = 0; i < 40; i++) {
+            for(int j = 0; j < 16; j++) {
+                mi = mi + memoria.memInstrucciones[i].palabra[j] + "     ";
+            }
+            mi = mi + "\n";
+        }
+        mi = mi + "\n\n";
+
+        //IMPRIMIR CACHES
+        String ci = "";
+        String cd = "";
+
+        //IMRPRIMIR REGISTROS
+        String re = "";
+
+        String resultados = mi + md;
+        JOptionPane.showMessageDialog(null, resultados);
+
         System.out.println("Programa finalizado");
     }
 

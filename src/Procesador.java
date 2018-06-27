@@ -15,7 +15,6 @@ public class Procesador {
 
     private Hilillo hilo0 = null;
     private Hilillo hilo1 = null;
-    public int colaHilillos[][]; //Estructura para guardar los registros de los hilillos e imprimirlos al final.
 
     private final int cantHilos, quantum;
     private int ciclosReloj;
@@ -50,14 +49,6 @@ public class Procesador {
                 contexto[i][j] = 0;
             }
         }
-
-        colaHilillos = new int[cant][32];
-        for (int i = 0; i < cant; i++) {
-            for (int j = 0; j < 32; j++) {
-                colaHilillos[i][j] = -1; //Si el registro no se modificó tiene -1.
-            }
-        }
-
     }
 
     /**
@@ -106,17 +97,19 @@ public class Procesador {
             }
 
             if (hilo0 != null && hilo0.getEstadoHilillo() == 0) {
-                for (int i = 0; i < 32; i++) {
-                    colaHilillos[hilo0.idHilillo][i] = hilo0.registro[i];
+                /*for (int i = 0; i < 32; i++) {
+                    contexto[iden][i] =  hilo0.registro[i];
                 }
-                hilo0.idHilillo = hilo0.idHilillo + 1;
+                hilo0.idHilillo = hilo0.idHilillo + 1;*/
+
                 hilo0 = null;
             }
             if (hilo1 != null && hilo1.getEstadoHilillo() == 0) {
-                for (int i = 0; i < 32; i++) {
-                    colaHilillos[hilo1.idHilillo][i] = hilo1.registro[i];
+                /*for (int i = 0; i < 32; i++) {
+                    contexto[iden][i] =  hilo1.registro[i];
                 }
-                hilo1.idHilillo = hilo1.idHilillo + 1;
+                hilo1.idHilillo = hilo1.idHilillo + 1;*/
+
                 hilo1 = null;
             }
             if (hilo0 == null && hilo1 == null) {
@@ -126,13 +119,7 @@ public class Procesador {
             }
 
             System.out.println("Ciclo de reloj: " + ciclosReloj);
-            if(hilo0 != null) {
-                System.out.println("Nucleo 0,          Hilillo: " + hilo0.idHilillo);
-            }
-            if(hilo1 != null) {
-                System.out.println("Nucleo 1,          Hilillo: " + hilo1.idHilillo);
 
-            }
             barreraI.arriveAndAwaitAdvance();
             ciclosReloj++;
 
@@ -177,6 +164,13 @@ public class Procesador {
             ciclosReloj++;
 
         }*/
+    }
+
+    /**
+     * Metodo para llenar el contexto del Hilillo.
+     */
+    public void llenarContextoHilillo() {
+
     }
 
     /**
