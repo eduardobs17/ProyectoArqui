@@ -12,6 +12,7 @@ public class Hilillo extends Thread {
 
     public int[] registro;
     public int pc;
+    public int idHilillo;
 
     /**
      * Constructor del hilillo.
@@ -20,7 +21,7 @@ public class Hilillo extends Thread {
      * @param pNucleo Nucleo del hilillo.
      * @param bi Barrera de inicio para que los hilillos inicien a la vez.
      */
-    Hilillo(String inst, int pcHilillo, int pNucleo, Phaser bi, Phaser bf) {
+    Hilillo(String inst, int pcHilillo, int pNucleo, Phaser bi, Phaser bf, int id) {
         procesador = Procesador.getInstancia(1,1);
         nucleo = pNucleo;
         instrucciones = inst;
@@ -32,6 +33,7 @@ public class Hilillo extends Thread {
 
         registro = new int[32];
         pc = pcHilillo;
+        idHilillo = id;
     }
 
     /**
@@ -70,7 +72,7 @@ public class Hilillo extends Thread {
                 pc -= 4;
             }
 
-            System.out.println("Hilillo " + nucleo + ", estado " + estadoHilillo + "\n");
+            //System.out.println("Hilillo " + nucleo + ", estado " + estadoHilillo + "\n");
             if (estadoHilillo != 0) {
                 barreraInicio.arriveAndAwaitAdvance();
             } else {

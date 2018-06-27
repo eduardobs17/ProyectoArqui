@@ -41,11 +41,13 @@ public class Main {
             colaHilos.add(inst);
             colaPCs.add(pc);
         }
+        //procesador.run(colaHilos, colaPCs, barreraInicio, barreraFinal);
+        //JOptionPane.showMessageDialog(null, "Holi");
 
         if (eleccion == "Rapida") {
-            procesador.run(colaHilos, colaPCs, barreraInicio, barreraFinal);
+            procesador.runRapida(colaHilos, colaPCs, barreraInicio, barreraFinal);
         } else {
-            JOptionPane.showMessageDialog(null, "Aqui llega hasta el ciclo de reloj 20");
+            procesador.runLenta(colaHilos, colaPCs, barreraInicio, barreraFinal);
         }
         System.out.println("Programa finalizado");
     }
