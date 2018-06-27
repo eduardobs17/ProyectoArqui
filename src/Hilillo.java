@@ -13,7 +13,6 @@ public class Hilillo extends Thread {
 
     public int pc;
     public int ciclosReloj;
-    public int quantum;
 
     private CyclicBarrier barreraI;
 
@@ -58,6 +57,9 @@ public class Hilillo extends Thread {
                 numPalabra++;
             }
             estadoHilillo = procesador.ALU(IR, this);
+            if (estadoHilillo == -1) {
+                pc -= 4;
+            }
             System.out.println("Hilillo " + nucleo + ", estado " + estadoHilillo);
             System.out.println("Ciclo de reloj: " + ciclosReloj);
             try {
