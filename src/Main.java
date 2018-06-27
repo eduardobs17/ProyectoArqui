@@ -3,7 +3,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Phaser;
 import javax.swing.JOptionPane;
 
 /** Clase principal del programa. */
@@ -16,28 +16,22 @@ public class Main {
     public static void main(String[] argv) {
         int cantHilos, quantum, pc;
 
-        Object[] elecciones = {"Rapida", "Lenta"};
+        String[] elecciones = {"Rapida", "Lenta"};
         Object eleccion = JOptionPane.showInputDialog(null,
                 "Elija la modalidad de ejecucion", "SIMULACION PROCESADOR MULTINUCLEO",
                 JOptionPane.QUESTION_MESSAGE, null,
                 elecciones, elecciones[0]);
 
-        cantHilos = Integer.parseInt(JOptionPane.showInputDialog("SIMULACION PROCESADOR MULTINUCLEO\n\n" +
-                "Digite la cantidad de hilos que desea que maneje el procesador"));
-        quantum = Integer.parseInt(JOptionPane.showInputDialog("SIMULACION PROCESADOR MULTINUCLEO\n\n" +
-                "Digite el tamaño de quantum que desea"));
+        cantHilos = Integer.parseInt(JOptionPane.showInputDialog("SIMULACION PROCESADOR MULTINUCLEO\n\n" + "Digite la cantidad de hilos que desea que maneje el procesador"));
+        quantum = Integer.parseInt(JOptionPane.showInputDialog("SIMULACION PROCESADOR MULTINUCLEO\n\n" + "Digite el tamaño de quantum que desea"));
 
         MemoriaPrincipal memoria = MemoriaPrincipal.getInstancia();
         Procesador procesador = Procesador.getInstancia(cantHilos, quantum);
         Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
         Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
 
-        CyclicBarrier barreraI;
-        if (cantHilos == 1) {
-            barreraI = new CyclicBarrier(2);
-        } else {
-            barreraI = new CyclicBarrier(3);
-        }
+        Phaser barreraInicio = new Phaser(), barreraFinal = new Phaser();
+        barreraInicio.register();
 
         for (int i = 0; i < cantHilos; i++) {
             String rutaHilo = i + ".txt";
@@ -49,10 +43,11 @@ public class Main {
         }
 
         if (eleccion == "Rapida") {
-            procesador.run(colaHilos, colaPCs, barreraI);
+            procesador.run(colaHilos, colaPCs, barreraInicio, barreraFinal);
         } else {
             JOptionPane.showMessageDialog(null, "Aqui llega hasta el ciclo de reloj 20");
         }
+        System.out.println("Programa finalizado");
     }
 
     /**
