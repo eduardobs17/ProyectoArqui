@@ -41,7 +41,6 @@ public class Main {
             colaHilos.add(inst);
             colaPCs.add(pc);
         }
-        //procesador.run(colaHilos, colaPCs, barreraInicio, barreraFinal);
 
         if (eleccion == "Rapida") {
             procesador.runRapida(colaHilos, colaPCs, barreraInicio, barreraFinal);
@@ -49,19 +48,21 @@ public class Main {
             procesador.runLenta(colaHilos, colaPCs, barreraInicio, barreraFinal);
         }
 
+
+
         //IMPRIMIR MEMORIA
         String mi = "MEMORIA DE INSTRUCCIONES\n\n";
         String md = "MEMORIA DE DATOS\n\n";
         for (int i = 0; i < 24; i++) {
             for(int j = 0; j < 4; j++) {
-                md = md + memoria.memDatos[i].palabra[j] + "     ";
+                md = md + memoria.memDatos[i].palabra[j] + " \t";
             }
             md = md + "\n";
         }
         md = md + "\n\n";
         for (int i = 0; i < 40; i++) {
             for(int j = 0; j < 16; j++) {
-                mi = mi + memoria.memInstrucciones[i].palabra[j] + "     ";
+                mi = mi + memoria.memInstrucciones[i].palabra[j] + " \t";
             }
             mi = mi + "\n";
         }
@@ -74,8 +75,12 @@ public class Main {
         //IMRPRIMIR REGISTROS
         String re = "";
 
-        String resultados = mi + md;
-        JOptionPane.showMessageDialog(null, resultados);
+
+        /*Marco marquin = new Marco(24, 4, memoria);
+        marquin.pack();
+        marquin.setVisible(true);*/
+
+        JOptionPane.showMessageDialog(null, md);
 
         System.out.println("Programa finalizado");
     }

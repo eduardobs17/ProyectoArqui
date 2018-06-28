@@ -99,16 +99,16 @@ public class Procesador {
             if (hilo0 != null && hilo0.getEstadoHilillo() == 0) {
                 /*for (int i = 0; i < 32; i++) {
                     contexto[iden][i] =  hilo0.registro[i];
-                }
-                hilo0.idHilillo = hilo0.idHilillo + 1;*/
+                }*/
+                hilo0.idHilillo = hilo0.idHilillo + 1;
 
                 hilo0 = null;
             }
             if (hilo1 != null && hilo1.getEstadoHilillo() == 0) {
                 /*for (int i = 0; i < 32; i++) {
                     contexto[iden][i] =  hilo1.registro[i];
-                }
-                hilo1.idHilillo = hilo1.idHilillo + 1;*/
+                }*/
+                hilo1.idHilillo = hilo1.idHilillo + 1;
 
                 hilo1 = null;
             }
@@ -119,6 +119,13 @@ public class Procesador {
             }
 
             System.out.println("Ciclo de reloj: " + ciclosReloj);
+            if(hilo0 != null) {
+                System.out.println("Nucleo 0: Hilillo " + hilo0.idHilillo + ", Estado " + hilo0.getEstadoHilillo());
+            }
+            if(hilo1 != null) {
+                System.out.println("Nucleo 1: Hilillo " + hilo1.idHilillo + ", Estado " + hilo1.getEstadoHilillo());
+            }
+            System.out.println("\n");
 
             barreraI.arriveAndAwaitAdvance();
             ciclosReloj++;
@@ -134,23 +141,28 @@ public class Procesador {
      * @param barreraF barreraFinal para manejar ciclo de reloj.
      */
     public void runLenta(Queue<String> colaHilos, Queue<Integer> colaPCs, Phaser barreraI, Phaser barreraF) {
-        /*while (true) {
+        int iden = 0;
+        while (true) {
 
             if (!colaHilos.isEmpty() && hilo0 == null) {
-                hilo0 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, barreraI, barreraF);
+                hilo0 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, barreraI, barreraF, iden);
+                iden++;
                 barreraI.register();
                 hilo0.start();
             }
             if (!colaHilos.isEmpty() && hilo1 == null) {
-                hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, barreraI, barreraF);
+                hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, barreraI, barreraF, iden);
+                iden++;
                 barreraI.register();
                 hilo1.start();
             }
 
             if (hilo0 != null && hilo0.getEstadoHilillo() == 0) {
+                hilo0.idHilillo = hilo0.idHilillo + 1;
                 hilo0 = null;
             }
             if (hilo1 != null && hilo1.getEstadoHilillo() == 0) {
+                hilo1.idHilillo = hilo1.idHilillo + 1;
                 hilo1 = null;
             }
             if (hilo0 == null && hilo1 == null) {
@@ -160,10 +172,23 @@ public class Procesador {
             }
 
             System.out.println("Ciclo de reloj: " + ciclosReloj);
+            if(hilo0 != null) {
+                System.out.println("Nucleo 0: Hilillo " + hilo0.idHilillo + ", Estado " + hilo0.getEstadoHilillo());
+            }
+            if(hilo1 != null) {
+                System.out.println("Nucleo 1: Hilillo " + hilo1.idHilillo + ", Estado " + hilo1.getEstadoHilillo());
+            }
+            System.out.println("\n");
+
             barreraI.arriveAndAwaitAdvance();
             ciclosReloj++;
 
-        }*/
+            try {
+                Thread.sleep(1000);
+            } catch(InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     /**

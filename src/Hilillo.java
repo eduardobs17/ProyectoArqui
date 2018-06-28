@@ -72,7 +72,7 @@ public class Hilillo extends Thread {
                 pc -= 4;
             }
 
-            System.out.println("Nucleo 0, Hilillo: " + nucleo + ", Estado " + estadoHilillo + "\n");
+            //System.out.println("Nucleo 0, Hilillo: " + nucleo + ", Estado " + estadoHilillo + "\n");
             if (estadoHilillo != 0) {
                 barreraInicio.arriveAndAwaitAdvance();
             } else {
