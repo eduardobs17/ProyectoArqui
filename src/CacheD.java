@@ -22,4 +22,15 @@ class CacheD {
             reservado[i] = false;
         }
     }
+
+    public void imprimirCache() {
+        String cd = "";
+        for(int i = 0; i < 4; i++) {
+            for(int j = 0; j < 6; j++) {
+                cd = cd + valores[i][j] + "   ";
+            }
+            cd = cd + "\n";
+        }
+        System.out.println(cd);
+    }
 }

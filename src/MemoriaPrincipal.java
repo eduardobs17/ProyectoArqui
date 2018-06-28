@@ -78,4 +78,15 @@ public class MemoriaPrincipal {
         }
         return valorRetorno;
     }
+
+    public void imprimirMemoria() {
+        String md = "";
+        for (int i = 0; i < 24; i++) {
+            for(int j = 0; j < 4; j++) {
+                md = md + memoria.memDatos[i].palabra[j] + "   ";
+            }
+            md = md + "\n";
+        }
+        System.out.println(md);
+    }
 }

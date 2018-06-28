@@ -6,7 +6,7 @@ import java.awt.event.WindowEvent;
 public class Marco extends JFrame {
     public Marco(int f, int c, MemoriaPrincipal mem) {
         super("RESULTADOS");
-        Object[][] datosMemoria = new Object[f][c];
+        String[][] datosMemoria = new String[f][c];
         for(int i = 0; i < f; i++) {
             for(int j = 0; j < c; j++) {
                 datosMemoria[i][j] = String.valueOf(mem.memDatos[i].palabra[j]);

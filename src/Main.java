@@ -43,45 +43,33 @@ public class Main {
         }
 
         if (eleccion == "Rapida") {
-            procesador.runRapida(colaHilos, colaPCs, barreraInicio, barreraFinal);
-        } else {
-            procesador.runLenta(colaHilos, colaPCs, barreraInicio, barreraFinal);
+            procesador.run(colaHilos, colaPCs, barreraInicio, barreraFinal, 0);
         }
-
-
-
-        //IMPRIMIR MEMORIA
-        String mi = "MEMORIA DE INSTRUCCIONES\n\n";
-        String md = "MEMORIA DE DATOS\n\n";
-        for (int i = 0; i < 24; i++) {
-            for(int j = 0; j < 4; j++) {
-                md = md + memoria.memDatos[i].palabra[j] + " \t";
-            }
-            md = md + "\n";
+        else if(eleccion == "Lenta") {
+            procesador.run(colaHilos, colaPCs, barreraInicio, barreraFinal, 1);
         }
-        md = md + "\n\n";
-        for (int i = 0; i < 40; i++) {
-            for(int j = 0; j < 16; j++) {
-                mi = mi + memoria.memInstrucciones[i].palabra[j] + " \t";
-            }
-            mi = mi + "\n";
-        }
-        mi = mi + "\n\n";
 
         //IMPRIMIR CACHES
-        String ci = "";
-        String cd = "";
+        System.out.println("CACHE NUCLEO 0\n");
+        procesador.cacheDatos[0].imprimirCache();
+        System.out.println("\n\n");
+        System.out.println("CACHE NUCLEO 1\n");
+        procesador.cacheDatos[1].imprimirCache();
+        System.out.println("\n\n");
+
+        //IMPRIMIR MEMORIA
+        System.out.println("MEMORIA DE DATOS\n");
+        memoria.imprimirMemoria();
+        System.out.println("\n\n");
 
         //IMRPRIMIR REGISTROS
-        String re = "";
+        for(int i = 0; i < cantHilos; i++) {
+            System.out.println("REGISTROS HILILLO " + i + "\n");
+            procesador.imprimirRegistroHilo(i);
+            System.out.println("\n\n");
+        }
 
-
-        /*Marco marquin = new Marco(24, 4, memoria);
-        marquin.pack();
-        marquin.setVisible(true);*/
-
-        JOptionPane.showMessageDialog(null, md);
-
+        //JOptionPane.showMessageDialog(null, md);
         System.out.println("Programa finalizado");
     }
 

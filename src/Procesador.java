@@ -20,7 +20,7 @@ public class Procesador {
     private int ciclosReloj;
 
     private int contexto[][];
-    private CacheD[] cacheDatos = new CacheD[2];
+    public CacheD[] cacheDatos = new CacheD[2];
     public CacheI[] cacheInstrucciones = new CacheI[2];
     private ReentrantLock busI = new ReentrantLock();
     private ReentrantLock busD = new ReentrantLock();
@@ -73,74 +73,15 @@ public class Procesador {
     }
 
     /**
-     * Corre la modalidad rapida, ejecuta el programa corrido.
+     * Metodo que inicia el programa y manda a ejecutar los Hilillos.
      * @param colaHilos cola de los hilos que se van a ejecutar.
      * @param colaPCs cola con el PC de los hilos que se van a ejecutar.
-     * @param barreraI barreraInicio para manejar ciclo de reloj.
-     * @param barreraF barreraFinal para manejar ciclo de reloj.
+     * @param barreraI barreraInicio para manejar ciclo de reloj para que los hilillos inicien a la vez.
+     * @param barreraF barreraFinal para manejar ciclo de reloj para que los hilillos finalicen a la vez.
+     * @param modalidad Modalidad de ejecución, si es 0 el programa corre con normalidad,
+     *                  si es 1 se agregan delay de 1 segundo para que el programa se ejecute despacio.
      */
-    public void runRapida(Queue<String> colaHilos, Queue<Integer> colaPCs, Phaser barreraI, Phaser barreraF) {
-        int iden = 0;
-        while (true) {
-
-            if (!colaHilos.isEmpty() && hilo0 == null) {
-                hilo0 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, barreraI, barreraF, iden);
-                iden++;
-                barreraI.register();
-                hilo0.start();
-            }
-            if (!colaHilos.isEmpty() && hilo1 == null) {
-                hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, barreraI, barreraF, iden);
-                iden++;
-                barreraI.register();
-                hilo1.start();
-            }
-
-            if (hilo0 != null && hilo0.getEstadoHilillo() == 0) {
-                /*for (int i = 0; i < 32; i++) {
-                    contexto[iden][i] =  hilo0.registro[i];
-                }*/
-                hilo0.idHilillo = hilo0.idHilillo + 1;
-
-                hilo0 = null;
-            }
-            if (hilo1 != null && hilo1.getEstadoHilillo() == 0) {
-                /*for (int i = 0; i < 32; i++) {
-                    contexto[iden][i] =  hilo1.registro[i];
-                }*/
-                hilo1.idHilillo = hilo1.idHilillo + 1;
-
-                hilo1 = null;
-            }
-            if (hilo0 == null && hilo1 == null) {
-                if (colaHilos.isEmpty()) {
-                    return;
-                }
-            }
-
-            System.out.println("Ciclo de reloj: " + ciclosReloj);
-            if(hilo0 != null) {
-                System.out.println("Nucleo 0: Hilillo " + hilo0.idHilillo + ", Estado " + hilo0.getEstadoHilillo());
-            }
-            if(hilo1 != null) {
-                System.out.println("Nucleo 1: Hilillo " + hilo1.idHilillo + ", Estado " + hilo1.getEstadoHilillo());
-            }
-            System.out.println("\n");
-
-            barreraI.arriveAndAwaitAdvance();
-            ciclosReloj++;
-
-        }
-    }
-
-    /**
-     * Corre la modalidad lenta, ejecuta el programa con delay en los ciclos de reloj.
-     * @param colaHilos cola de los hilos que se van a ejecutar.
-     * @param colaPCs cola con el PC de los hilos que se van a ejecutar.
-     * @param barreraI barreraInicio para manejar ciclo de reloj.
-     * @param barreraF barreraFinal para manejar ciclo de reloj.
-     */
-    public void runLenta(Queue<String> colaHilos, Queue<Integer> colaPCs, Phaser barreraI, Phaser barreraF) {
+    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, Phaser barreraI, Phaser barreraF, int modalidad) {
         int iden = 0;
         while (true) {
 
@@ -179,62 +120,17 @@ public class Procesador {
                 System.out.println("Nucleo 1: Hilillo " + hilo1.idHilillo + ", Estado " + hilo1.getEstadoHilillo());
             }
             System.out.println("\n");
-
             barreraI.arriveAndAwaitAdvance();
             ciclosReloj++;
 
-            try {
-                Thread.sleep(1000);
-            } catch(InterruptedException ex) {
-                Thread.currentThread().interrupt();
+            if(modalidad == 1) {
+                try {
+                    Thread.sleep(500);
+                } catch(InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
-    }
-
-    /**
-     * Metodo para llenar el contexto del Hilillo.
-     */
-    public void llenarContextoHilillo() {
-
-    }
-
-    /**
-     * Metodo que inicia el programa y manda a ejecutar los hilillos.
-     * @param colaHilos Cola que contiene string con las instrucciones de todos los hilillos.
-     * @param colaPCs Cola que contiene el PC de todos los hilillos.
-     * @param barreraF Barrera de inicio para que los hilillos inicien a la vez.
-     */
-    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, Phaser barreraI, Phaser barreraF) {
-        /*while (true) {
-
-                if (!colaHilos.isEmpty() && hilo0 == null) {
-                    hilo0 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, barreraI, barreraF);
-                    barreraI.register();
-                    hilo0.start();
-                }
-                if (!colaHilos.isEmpty() && hilo1 == null) {
-                    hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, barreraI, barreraF);
-                    barreraI.register();
-                    hilo1.start();
-                }
-
-                if (hilo0 != null && hilo0.getEstadoHilillo() == 0) {
-                    hilo0 = null;
-                }
-                if (hilo1 != null && hilo1.getEstadoHilillo() == 0) {
-                    hilo1 = null;
-                }
-                if (hilo0 == null && hilo1 == null) {
-                    if (colaHilos.isEmpty()) {
-                        return;
-                    }
-                }
-
-                //System.out.println("Ciclo de reloj: " + ciclosReloj);
-                barreraI.arriveAndAwaitAdvance();
-                ciclosReloj++;
-
-        }*/
     }
 
     /**
@@ -685,5 +581,13 @@ public class Procesador {
         System.arraycopy(memoria.memDatos[numBloque].palabra, 0, cache.valores[posCache], 0, 4);
         cache.valores[posCache][4] = numBloque;
         cache.valores[posCache][5] = 1;
+    }
+
+    public void imprimirRegistroHilo(int h) {
+        String rh = "";
+        for (int i = 0; i < 32; i++) {
+            rh = rh + contexto[h][i] + "   ";
+        }
+        System.out.println(rh);
     }
 }
