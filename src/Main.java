@@ -27,25 +27,24 @@ public class Main {
 
         MemoriaPrincipal memoria = MemoriaPrincipal.getInstancia();
         Procesador procesador = Procesador.getInstancia(cantHilos, quantum);
-        Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
         Queue<Integer> colaIDs = new ArrayDeque<>(cantHilos);
 
         Phaser barreraInicio = new Phaser(), barreraFinal = new Phaser();
         barreraInicio.register();
+        barreraFinal.register();
 
         for (int i = 0; i < cantHilos; i++) {
             String rutaHilo = i + ".txt";
             String inst = leerArchivo(rutaHilo);
             pc = memoria.agregarInst(inst);
             procesador.llenarContextopc(i, pc);
-            colaHilos.add(inst);
             colaIDs.add(i);
         }
 
         if (eleccion == "Rapida") {
-            procesador.run(colaHilos, colaIDs, barreraInicio, barreraFinal, 0);
+            procesador.run(colaIDs, barreraInicio, barreraFinal, 0);
         } else {
-            procesador.run(colaHilos, colaIDs, barreraInicio, barreraFinal, 1);
+            procesador.run(colaIDs, barreraInicio, barreraFinal, 1);
         }
 
         //IMPRIMIR CACHES

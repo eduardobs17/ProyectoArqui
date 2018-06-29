@@ -15,7 +15,7 @@ public class Procesador {
     private Hilillo hilo0 = null;
     private Hilillo hilo1 = null;
 
-    private final int cantHilos, quantum;
+    private final int quantum;
     private int ciclosReloj;
 
     //contexto[i][0] = pc; contexto[i][1-32] = registros
@@ -33,7 +33,6 @@ public class Procesador {
      */
     private Procesador(int cant, int tamQuantum) {
         memoria = MemoriaPrincipal.getInstancia();
-        cantHilos = cant;
         quantum = tamQuantum;
         ciclosReloj = 0;
 
@@ -43,8 +42,8 @@ public class Procesador {
         cacheInstrucciones[0] = new CacheI();
         cacheInstrucciones[1] = new CacheI();
 
-        contexto = new int[cantHilos][33];
-        for (int i = 0; i < cantHilos; i++) {
+        contexto = new int[cant][33];
+        for (int i = 0; i < cant; i++) {
             for (int j = 0; j < 33; j++) {
                 contexto[i][j] = 0;
             }
@@ -74,38 +73,25 @@ public class Procesador {
 
     /**
      * Metodo que inicia el programa y manda a ejecutar los Hilillos.
-     * @param colaHilos cola de los hilos que se van a ejecutar.
      * @param colaIDs cola con el PC de los hilos que se van a ejecutar.
      * @param barreraI barreraInicio para manejar ciclo de reloj para que los hilillos inicien a la vez.
      * @param barreraF barreraFinal para manejar ciclo de reloj para que los hilillos finalicen a la vez.
      * @param modalidad Modalidad de ejecución, si es 0 el programa corre con normalidad,
      *                  si es 1 se agregan delay de 1 segundo para que el programa se ejecute despacio.
      */
-    public void run(Queue<String> colaHilos, Queue<Integer> colaIDs, Phaser barreraI, Phaser barreraF, int modalidad) {
+    public void run(Queue<Integer> colaIDs, Phaser barreraI, Phaser barreraF, int modalidad) {
         while (true) {
-            if (!colaHilos.isEmpty() && hilo0 == null) {
+            if (!colaIDs.isEmpty() && hilo0 == null) {
                 int id = colaIDs.poll();
-                hilo0 = new Hilillo(colaHilos.poll(), contexto[id][32], 0, barreraI, barreraF, id);
+                hilo0 = new Hilillo(0, barreraI, barreraF, id, contexto[id]);
+                hilo0.getBarreraI().register();
                 hilo0.start();
             }
-            if (!colaHilos.isEmpty() && hilo1 == null) {
+            if (!colaIDs.isEmpty() && hilo1 == null) {
                 int id = colaIDs.poll();
-                hilo1 = new Hilillo(colaHilos.poll(), contexto[id][32], 1, barreraI, barreraF, id);
+                hilo1 = new Hilillo(1, barreraI, barreraF, id, contexto[id]);
+                hilo1.getBarreraI().register();
                 hilo1.start();
-            }
-
-            if (hilo0 != null && hilo0.getEstadoHilillo() == 0) {
-                hilo0.idHilillo = hilo0.idHilillo + 1;
-                hilo0 = null;
-            }
-            if (hilo1 != null && hilo1.getEstadoHilillo() == 0) {
-                hilo1.idHilillo = hilo1.idHilillo + 1;
-                hilo1 = null;
-            }
-            if (hilo0 == null && hilo1 == null) {
-                if (colaHilos.isEmpty()) {
-                    return;
-                }
             }
 
             System.out.println("Ciclo de reloj: " + ciclosReloj);
@@ -116,8 +102,6 @@ public class Procesador {
                 System.out.println("Nucleo 1: Hilillo " + hilo1.idHilillo + ", Estado " + hilo1.getEstadoHilillo());
             }
             System.out.println("\n");
-            barreraI.arriveAndAwaitAdvance();
-            ciclosReloj++;
 
             if (modalidad == 1) {
                 try {
@@ -126,6 +110,19 @@ public class Procesador {
                     Thread.currentThread().interrupt();
                 }
             }
+
+            barreraI.arriveAndAwaitAdvance();
+            ciclosReloj++;
+
+            if (hilo0 != null && hilo0.getEstadoHilillo() == 0) { hilo0 = null; }
+            if (hilo1 != null && hilo1.getEstadoHilillo() == 0) { hilo1 = null; }
+
+            if (hilo0 == null && hilo1 == null) {
+                if (colaIDs.isEmpty()) {
+                    return;
+                }
+            }
+            barreraF.arriveAndAwaitAdvance();
         }
     }
 
@@ -379,7 +376,7 @@ public class Procesador {
                         copiaCache.valores[posCache][palabra] = registros[registro];
                     } finally {
                         copiaCache.locks[posCache].unlock();
-                    }
+                     }
                 } else if (copiaCache.valores[posCache][5] == 1) {
                     if (!busD.isLocked()) {
                         busD.tryLock();
@@ -512,6 +509,7 @@ public class Procesador {
                     try { //Se guarda el bloque en memoria
                         for (int mf = 0; mf < 40; mf++) {
                             h.getBarreraI().arriveAndAwaitAdvance();
+                            h.ciclosRelojHilillo++;
                         }
                         System.arraycopy(cacheInstrucciones[nucleo].valores[posCache], 0, memoria.memInstrucciones[bloqueEnMemoria].palabra, 0, 16);
                         cacheInstrucciones[nucleo].valores[posCache][17] = 1;
@@ -606,4 +604,7 @@ public class Procesador {
         System.out.println(rh);
     }
 
+    private boolean revisarQuantumHilillo(Hilillo h) {
+        return h.ciclosRelojHilillo > quantum;
+    }
 }

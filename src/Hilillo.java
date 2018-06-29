@@ -3,9 +3,8 @@ import java.util.concurrent.Phaser;
 public class Hilillo extends Thread {
     private Procesador procesador;
     private int nucleo;
-    private String instrucciones;
     private int estadoHilillo;
-    private int ciclosRelojHilillo;
+    public int ciclosRelojHilillo;
     private Phaser barreraInicio;
     private Phaser barreraFinal;
     private int[] IR;
@@ -16,25 +15,23 @@ public class Hilillo extends Thread {
 
     /**
      * Constructor del hilillo.
-     * @param inst String con las instrucciones del hilillo.
-     * @param pcHilillo PC del hilillo.
      * @param pNucleo Nucleo del hilillo.
      * @param bi Barrera de inicio para que los hilillos inicien a la vez.
      */
-    Hilillo(String inst, int pcHilillo, int pNucleo, Phaser bi, Phaser bf, int id) {
+    Hilillo(int pNucleo, Phaser bi, Phaser bf, int id, int[] contextoHilillo) {
         procesador = Procesador.getInstancia(1,1);
         nucleo = pNucleo;
-        instrucciones = inst;
-        estadoHilillo = 1;
-        ciclosRelojHilillo = 0;
         barreraInicio = bi;
         barreraFinal = bf;
-        IR = new int[4];
+        idHilillo = id;
 
         registro = new int[32];
-        pc = pcHilillo;
-        idHilillo = id;
-        barreraInicio.register();
+        System.arraycopy(contextoHilillo, 0, registro, 0, 32);
+        pc = contextoHilillo[32];
+
+        estadoHilillo = 1;
+        ciclosRelojHilillo = 0;
+        IR = new int[4];
     }
 
     /**
