@@ -34,6 +34,7 @@ public class Hilillo extends Thread {
         registro = new int[32];
         pc = pcHilillo;
         idHilillo = id;
+        barreraInicio.register();
     }
 
     /**
@@ -72,13 +73,13 @@ public class Hilillo extends Thread {
                 pc -= 4;
             }
 
-            //System.out.println("Nucleo 0, Hilillo: " + nucleo + ", Estado " + estadoHilillo + "\n");
+            ciclosRelojHilillo++;
             if (estadoHilillo != 0) {
                 barreraInicio.arriveAndAwaitAdvance();
             } else {
+                System.arraycopy(registro, 0, procesador.contexto[idHilillo], 0, 32);
                 barreraInicio.arriveAndDeregister();
             }
-            ciclosRelojHilillo++;
         }
     }
 
@@ -93,10 +94,4 @@ public class Hilillo extends Thread {
     public int getEstadoHilillo() { return estadoHilillo; }
 
     public Phaser getBarreraI() { return barreraInicio; }
-
-    public void cambiarBarreraI(Phaser newBarreraI) {
-        barreraInicio = newBarreraI;
-    }
-
-    public int getCiclosRelojHilillo() { return ciclosRelojHilillo; }
 }

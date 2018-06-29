@@ -23,12 +23,12 @@ public class Main {
                 elecciones, elecciones[0]);
 
         cantHilos = Integer.parseInt(JOptionPane.showInputDialog("SIMULACION PROCESADOR MULTINUCLEO\n\n" + "Digite la cantidad de hilos que desea que maneje el procesador"));
-        quantum = Integer.parseInt(JOptionPane.showInputDialog("SIMULACION PROCESADOR MULTINUCLEO\n\n" + "Digite el tamaño de quantum que desea"));
+        quantum = Integer.parseInt(JOptionPane.showInputDialog("SIMULACION PROCESADOR MULTINUCLEO\n\n" + "Digite el tamaño de quantum que desea:"));
 
         MemoriaPrincipal memoria = MemoriaPrincipal.getInstancia();
         Procesador procesador = Procesador.getInstancia(cantHilos, quantum);
         Queue<String> colaHilos = new ArrayDeque<>(cantHilos);
-        Queue<Integer> colaPCs = new ArrayDeque<>(cantHilos);
+        Queue<Integer> colaIDs = new ArrayDeque<>(cantHilos);
 
         Phaser barreraInicio = new Phaser(), barreraFinal = new Phaser();
         barreraInicio.register();
@@ -39,38 +39,32 @@ public class Main {
             pc = memoria.agregarInst(inst);
             procesador.llenarContextopc(i, pc);
             colaHilos.add(inst);
-            colaPCs.add(pc);
+            colaIDs.add(i);
         }
 
         if (eleccion == "Rapida") {
-            procesador.run(colaHilos, colaPCs, barreraInicio, barreraFinal, 0);
-        }
-        else if(eleccion == "Lenta") {
-            procesador.run(colaHilos, colaPCs, barreraInicio, barreraFinal, 1);
+            procesador.run(colaHilos, colaIDs, barreraInicio, barreraFinal, 0);
+        } else {
+            procesador.run(colaHilos, colaIDs, barreraInicio, barreraFinal, 1);
         }
 
         //IMPRIMIR CACHES
-        System.out.println("CACHE NUCLEO 0\n");
+        System.out.println("CACHE NUCLEO 0");
         procesador.cacheDatos[0].imprimirCache();
-        System.out.println("\n\n");
-        System.out.println("CACHE NUCLEO 1\n");
+        System.out.println("CACHE NUCLEO 1");
         procesador.cacheDatos[1].imprimirCache();
-        System.out.println("\n\n");
 
         //IMPRIMIR MEMORIA
-        System.out.println("MEMORIA DE DATOS\n");
+        System.out.println("MEMORIA DE DATOS");
         memoria.imprimirMemoria();
-        System.out.println("\n\n");
 
         //IMRPRIMIR REGISTROS
-        for(int i = 0; i < cantHilos; i++) {
-            System.out.println("REGISTROS HILILLO " + i + "\n");
+        for (int i = 0; i < cantHilos; i++) {
+            System.out.println("\nREGISTROS HILILLO " + i);
             procesador.imprimirRegistroHilo(i);
-            System.out.println("\n\n");
         }
 
-        //JOptionPane.showMessageDialog(null, md);
-        System.out.println("Programa finalizado");
+        System.out.println("\nSimulación finalizada.");
     }
 
     /**
@@ -90,7 +84,7 @@ public class Main {
 
             String linea;
             while((linea = br.readLine()) != null) {
-                instrucciones.append(linea).append("\n"); //Concatena cada instruccion y agrega un \n al final.
+                instrucciones.append(linea).append("\n");
             }
         } catch (Exception e) {
             e.printStackTrace();

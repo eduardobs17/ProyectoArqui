@@ -1,4 +1,3 @@
-import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.locks.ReentrantLock;
@@ -19,7 +18,8 @@ public class Procesador {
     private final int cantHilos, quantum;
     private int ciclosReloj;
 
-    private int contexto[][];
+    //contexto[i][0] = pc; contexto[i][1-32] = registros
+    public int contexto[][];
     public CacheD[] cacheDatos = new CacheD[2];
     public CacheI[] cacheInstrucciones = new CacheI[2];
     private ReentrantLock busI = new ReentrantLock();
@@ -75,26 +75,22 @@ public class Procesador {
     /**
      * Metodo que inicia el programa y manda a ejecutar los Hilillos.
      * @param colaHilos cola de los hilos que se van a ejecutar.
-     * @param colaPCs cola con el PC de los hilos que se van a ejecutar.
+     * @param colaIDs cola con el PC de los hilos que se van a ejecutar.
      * @param barreraI barreraInicio para manejar ciclo de reloj para que los hilillos inicien a la vez.
      * @param barreraF barreraFinal para manejar ciclo de reloj para que los hilillos finalicen a la vez.
      * @param modalidad Modalidad de ejecución, si es 0 el programa corre con normalidad,
      *                  si es 1 se agregan delay de 1 segundo para que el programa se ejecute despacio.
      */
-    public void run(Queue<String> colaHilos, Queue<Integer> colaPCs, Phaser barreraI, Phaser barreraF, int modalidad) {
-        int iden = 0;
+    public void run(Queue<String> colaHilos, Queue<Integer> colaIDs, Phaser barreraI, Phaser barreraF, int modalidad) {
         while (true) {
-
             if (!colaHilos.isEmpty() && hilo0 == null) {
-                hilo0 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 0, barreraI, barreraF, iden);
-                iden++;
-                barreraI.register();
+                int id = colaIDs.poll();
+                hilo0 = new Hilillo(colaHilos.poll(), contexto[id][32], 0, barreraI, barreraF, id);
                 hilo0.start();
             }
             if (!colaHilos.isEmpty() && hilo1 == null) {
-                hilo1 = new Hilillo(colaHilos.poll(), colaPCs.poll(), 1, barreraI, barreraF, iden);
-                iden++;
-                barreraI.register();
+                int id = colaIDs.poll();
+                hilo1 = new Hilillo(colaHilos.poll(), contexto[id][32], 1, barreraI, barreraF, id);
                 hilo1.start();
             }
 
@@ -113,17 +109,17 @@ public class Procesador {
             }
 
             System.out.println("Ciclo de reloj: " + ciclosReloj);
-            if(hilo0 != null) {
+            if (hilo0 != null) {
                 System.out.println("Nucleo 0: Hilillo " + hilo0.idHilillo + ", Estado " + hilo0.getEstadoHilillo());
             }
-            if(hilo1 != null) {
+            if (hilo1 != null) {
                 System.out.println("Nucleo 1: Hilillo " + hilo1.idHilillo + ", Estado " + hilo1.getEstadoHilillo());
             }
             System.out.println("\n");
             barreraI.arriveAndAwaitAdvance();
             ciclosReloj++;
 
-            if(modalidad == 1) {
+            if (modalidad == 1) {
                 try {
                     Thread.sleep(500);
                 } catch(InterruptedException ex) {
@@ -143,7 +139,7 @@ public class Procesador {
         int y = instruccion[0];
         switch (y) {
             case 2: //JR
-                h.pc = instruccion[1];
+                h.pc = h.registro[instruccion[1]];
                 break;
             case 3: //JAL
                 h.registro[31] = h.pc;
@@ -286,6 +282,7 @@ public class Procesador {
                         barreraHilillo.arriveAndAwaitAdvance();
                     }
                     guardarBloqueEnMemoriaD(copiaCache.valores[posCache]);
+                    copiaCache.valores[posCache][5] = 1;
                 }
 
                 if (!busD.isLocked()) {                                                                 //Se revisa estado del bus
@@ -304,8 +301,25 @@ public class Procesador {
                                         }
                                         guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
                                         guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache, copiaCache, posCache);
+                                        copiaCache.valores[posCache][5] = 1;
+                                        copiaOtraCache.valores[posCache][5] = 1;
                                     } finally {
                                         copiaOtraCache.locks[posCache].unlock();
+                                        copiaCache.locks[posCache].unlock();
+                                    }
+                                } else {
+                                    copiaCache.locks[posCache].tryLock();
+                                    try {
+                                        if (copiaOtraCache.valores[posCache][5] == 0) {
+                                            for (int i = 0; i < 40; i++) {
+                                                barreraHilillo.arriveAndAwaitAdvance();
+                                            }
+                                            guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                        } else {
+                                            guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache, copiaCache, posCache);
+                                        }
+                                        copiaCache.valores[posCache][5] = 1;
+                                    } finally {
                                         copiaCache.locks[posCache].unlock();
                                     }
                                 }
@@ -316,6 +330,7 @@ public class Procesador {
                                         barreraHilillo.arriveAndAwaitAdvance();
                                     }
                                     guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
+                                    copiaCache.valores[posCache][5] = 1;
                                 } finally {
                                     copiaCache.locks[posCache].unlock();
                                 }
@@ -590,4 +605,5 @@ public class Procesador {
         }
         System.out.println(rh);
     }
+
 }
