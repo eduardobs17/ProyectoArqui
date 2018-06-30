@@ -91,4 +91,8 @@ public class Hilillo extends Thread {
     public int getEstadoHilillo() { return estadoHilillo; }
 
     public Phaser getBarreraI() { return barreraInicio; }
+
+    public void desregistrarHilillo() {
+        barreraInicio.arriveAndDeregister();
+    }
 }
