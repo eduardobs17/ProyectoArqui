@@ -1,3 +1,4 @@
+import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Phaser;
 
@@ -82,16 +83,14 @@ public class Procesador {
         while (true) {
             if (!colaIDs.isEmpty() && hilo0 == null) {
                 int id = colaIDs.poll();
-                hilo0 = new Hilillo(0, barreraI, barreraF, id, contexto[id]);
+                hilo0 = new Hilillo(0, barreraI, barreraF, id, contexto[id], true);
                 hilo0.setName("Hilo0");
-                hilo0.getBarreraI().register();
                 hilo0.start();
             }
             if (!colaIDs.isEmpty() && hilo1 == null) {
                 int id = colaIDs.poll();
-                hilo1 = new Hilillo(1, barreraI, barreraF, id, contexto[id]);
+                hilo1 = new Hilillo(1, barreraI, barreraF, id, contexto[id], true);
                 hilo1.setName("Hilo1");
-                hilo1.getBarreraI().register();
                 hilo1.start();
             }
 
@@ -133,13 +132,18 @@ public class Procesador {
 
             if (hilo0 != null && hilo0.ciclosRelojHilillo > quantum) {
                 if (!colaIDs.isEmpty()) {
-                    /*hilo0.stop();
-                    hilo0.desregistrarHililloM(busI, busD, cacheInstrucciones, cacheDatos, hilo0);
+                    hilo0.suspend();
+                    hilo0.desregistrarHilillo(cacheInstrucciones, cacheDatos, hilo0);
+                    hilo0.stop();
                     System.arraycopy(hilo0.registro, 0, contexto[hilo0.idHilillo], 0, 32);
                     contexto[hilo0.idHilillo][32] = hilo0.pc;
                     colaIDs.add(hilo0.idHilillo);
+                    hilo0 = null;
 
-                    hilo0 = null;*/
+                    int id = colaIDs.poll();
+                    hilo0 = new Hilillo(0, barreraI, barreraF, id, contexto[id], false);
+                    hilo0.setName("Hilo0");
+                    hilo0.start();
                 }
             }
 
@@ -210,13 +214,13 @@ public class Procesador {
                 h.registro[instruccion[3]] = h.registro[instruccion[1]] - h.registro[instruccion[2]];
                 break;
             case 35: //LW
-                int res = loadD(instruccion[2], h.registro[instruccion[1]] + instruccion[3], h.getNucleo(), h.registro, h.getBarreraI(), h);
+                int res = loadD(instruccion[2], h.registro[instruccion[1]] + instruccion[3], h.getNucleo(), h.registro, h);
                 if (res == -1) {
                     return -1;
                 }
                 break;
             case 43: //SW
-                storeD(instruccion[2], h.registro[instruccion[1]] + instruccion[3], h.getNucleo(), h.registro, h.getBarreraI(), h);
+                storeD(instruccion[2], h.registro[instruccion[1]] + instruccion[3], h.getNucleo(), h.registro, h);
                 break;
             case 63: //FIN
                 return 0;
@@ -231,7 +235,7 @@ public class Procesador {
      * @param nucleo Nucleo del hilillo.
      * @param registros Los registros del hilillo.
      */
-    private int loadD (int registro, int posMemoria, int nucleo, int[] registros, Phaser barreraHilillo, Hilillo h) {
+    private int loadD (int registro, int posMemoria, int nucleo, int[] registros, Hilillo h) {
         int bloque = posMemoria / 16;
         int palabra = (posMemoria % 16) / 4;
 
@@ -267,8 +271,9 @@ public class Procesador {
                                         copiaCache.locks[posCache].tryLock();
                                         try {
                                             for (int i = 0; i < 40; i++) {
-                                                barreraHilillo.arriveAndAwaitAdvance();
+                                                h.getBarreraI().arriveAndAwaitAdvance();
                                                 h.ciclosRelojHilillo++;
+                                                h.getBarreraF().arriveAndAwaitAdvance();
                                             }
                                             guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
                                             guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache, copiaCache, posCache);
@@ -280,8 +285,9 @@ public class Procesador {
                                         copiaCache.locks[posCache].tryLock();
                                         try {
                                             for (int i = 0; i < 40; i++) {
-                                                barreraHilillo.arriveAndAwaitAdvance();
+                                                h.getBarreraI().arriveAndAwaitAdvance();
                                                 h.ciclosRelojHilillo++;
+                                                h.getBarreraF().arriveAndAwaitAdvance();
                                             }
                                             guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
                                         } finally {
@@ -292,8 +298,9 @@ public class Procesador {
                                     copiaCache.locks[posCache].tryLock();
                                     try {
                                         for (int i = 0; i < 40; i++) {
-                                            barreraHilillo.arriveAndAwaitAdvance();
+                                            h.getBarreraI().arriveAndAwaitAdvance();
                                             h.ciclosRelojHilillo++;
+                                            h.getBarreraF().arriveAndAwaitAdvance();
                                         }
                                         guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
                                     } finally {
@@ -319,8 +326,9 @@ public class Procesador {
                     try {
                         if (copiaCache.valores[posCache][5] == 2) {
                             for (int i = 0; i < 40; i++) {
-                                barreraHilillo.arriveAndAwaitAdvance();
+                                h.getBarreraI().arriveAndAwaitAdvance();
                                 h.ciclosRelojHilillo++;
+                                h.getBarreraF().arriveAndAwaitAdvance();
                             }
                             guardarBloqueEnMemoriaD(copiaCache.valores[posCache]);
                             copiaCache.valores[posCache][5] = 1;
@@ -335,8 +343,9 @@ public class Procesador {
                                     copiaCache.locks[posCache].tryLock();
                                     try {
                                         for (int i = 0; i < 40; i++) {
-                                            barreraHilillo.arriveAndAwaitAdvance();
+                                            h.getBarreraI().arriveAndAwaitAdvance();
                                             h.ciclosRelojHilillo++;
+                                            h.getBarreraF().arriveAndAwaitAdvance();
                                         }
                                         guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
                                         guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache, copiaCache, posCache);
@@ -351,8 +360,9 @@ public class Procesador {
                                     try {
                                         if (copiaOtraCache.valores[posCache][5] == 0) {
                                             for (int i = 0; i < 40; i++) {
-                                                barreraHilillo.arriveAndAwaitAdvance();
+                                                h.getBarreraI().arriveAndAwaitAdvance();
                                                 h.ciclosRelojHilillo++;
+                                                h.getBarreraF().arriveAndAwaitAdvance();
                                             }
                                             guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
                                         } else {
@@ -367,8 +377,9 @@ public class Procesador {
                                 copiaCache.locks[posCache].tryLock();
                                 try {
                                     for (int i = 0; i < 40; i++) {
-                                        barreraHilillo.arriveAndAwaitAdvance();
+                                        h.getBarreraI().arriveAndAwaitAdvance();
                                         h.ciclosRelojHilillo++;
+                                        h.getBarreraF().arriveAndAwaitAdvance();
                                     }
                                     guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
                                     copiaCache.valores[posCache][5] = 1;
@@ -403,7 +414,7 @@ public class Procesador {
      * @param nucleo Nucleo del hilillo.
      * @param registros Los registros del hilillo.
      */
-    private void storeD (int registro, int posMemoria, int nucleo, int[] registros, Phaser barreraHilillo, Hilillo h) {
+    private void storeD (int registro, int posMemoria, int nucleo, int[] registros, Hilillo h) {
         int bloque = posMemoria / 16;
         int palabra = (posMemoria % 16) / 4;
 
@@ -473,8 +484,9 @@ public class Procesador {
                         //Se revisa bloque victima
                         if (copiaCache.valores[posCache][5] == 2) {
                             for (int i = 0; i < 40; i++) {
-                                barreraHilillo.arriveAndAwaitAdvance();
+                                h.getBarreraI().arriveAndAwaitAdvance();
                                 h.ciclosRelojHilillo++;
+                                h.getBarreraF().arriveAndAwaitAdvance();
                             }
                             guardarBloqueEnMemoriaD(copiaCache.valores[posCache]);
                         }
@@ -489,8 +501,9 @@ public class Procesador {
 
                                     try {
                                         for (int i = 0; i < 40; i++) {
-                                            barreraHilillo.arriveAndAwaitAdvance();
+                                            h.getBarreraI().arriveAndAwaitAdvance();
                                             h.ciclosRelojHilillo++;
+                                            h.getBarreraF().arriveAndAwaitAdvance();
                                         }
                                         guardarBloqueEnMemoriaD(copiaOtraCache.valores[posCache]);
                                         guardarBloqueEnCacheDesdeCacheD(copiaOtraCache, posCache, copiaCache, posCache);
@@ -506,8 +519,9 @@ public class Procesador {
 
                                     try {
                                         for (int i = 0; i < 40; i++) {
-                                            barreraHilillo.arriveAndAwaitAdvance();
+                                            h.getBarreraI().arriveAndAwaitAdvance();
                                             h.ciclosRelojHilillo++;
+                                            h.getBarreraF().arriveAndAwaitAdvance();
                                         }
                                         guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
                                         copiaCache.valores[posCache][palabra] = registros[registro];
@@ -522,8 +536,9 @@ public class Procesador {
 
                                 try {
                                     for (int i = 0; i < 40; i++) {
-                                        barreraHilillo.arriveAndAwaitAdvance();
+                                        h.getBarreraI().arriveAndAwaitAdvance();
                                         h.ciclosRelojHilillo++;
+                                        h.getBarreraF().arriveAndAwaitAdvance();
                                     }
                                     guardarBloqueEnCacheDesdeMemoriaD(bloque, copiaCache, posCache);
                                     copiaCache.valores[posCache][palabra] = registros[registro];
@@ -565,9 +580,10 @@ public class Procesador {
                     cacheInstrucciones[nucleo].locks[posCache].tryLock();
 
                     try { //Se guarda el bloque en memoria
-                        for (int mf = 0; mf < 40; mf++) {
+                        for (int i = 0; i < 40; i++) {
                             h.getBarreraI().arriveAndAwaitAdvance();
                             h.ciclosRelojHilillo++;
+                            h.getBarreraF().arriveAndAwaitAdvance();
                         }
                         System.arraycopy(cacheInstrucciones[nucleo].valores[posCache], 0, memoria.memInstrucciones[bloqueEnMemoria].palabra, 0, 16);
                         cacheInstrucciones[nucleo].valores[posCache][17] = 1;
@@ -588,9 +604,10 @@ public class Procesador {
                 cacheInstrucciones[nucleo].locks[posCache].tryLock();
 
                 try {
-                    for (int mf = 0; mf < 40; mf++) {
+                    for (int i = 0; i < 40; i++) {
                         h.getBarreraI().arriveAndAwaitAdvance();
                         h.ciclosRelojHilillo++;
+                        h.getBarreraF().arriveAndAwaitAdvance();
                     }
                     System.arraycopy(memoria.memInstrucciones[bloqueEnMemoria].palabra, 0, cacheInstrucciones[nucleo].valores[posCache], 0, 16);
                     cacheInstrucciones[nucleo].valores[posCache][16] = bloqueMem;
