@@ -1,10 +1,9 @@
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 class CacheD {
     public int[][] valores;
     public boolean[] reservado;
-    public Lock[] locks;
+    public ReentrantLock[] locks;
 
     /**
      * Constructor de cache de datos.

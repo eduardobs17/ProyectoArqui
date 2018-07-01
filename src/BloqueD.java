@@ -5,7 +5,7 @@ public class BloqueD {
     /**
      * Constructor de Bloque de datos.
      */
-    public BloqueD() {
+    BloqueD() {
         palabra = new int[4];
         direccion = new int[4];
     }

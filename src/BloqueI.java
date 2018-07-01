@@ -5,7 +5,7 @@ public class BloqueI {
     /**
      * Constructor de bloque de instrucciones.
      */
-    public BloqueI() {
+    BloqueI() {
         palabra = new int[16];
         direccion = new int[16];
     }

@@ -14,6 +14,8 @@ public class Procesador {
 
     private Hilillo hilo0 = null;
     private Hilillo hilo1 = null;
+    private ReentrantLock[][] listaCandados = new ReentrantLock[2][6];
+    private int[] counters = new int[2];
 
     private final int quantum;
     private int ciclosReloj;
@@ -48,6 +50,9 @@ public class Procesador {
                 contexto[i][j] = 0;
             }
         }
+
+        counters[0] = 0;
+        counters[1] = 0;
     }
 
     /**
@@ -94,6 +99,8 @@ public class Procesador {
                 hilo1.start();
             }
 
+            barreraI.arriveAndAwaitAdvance();
+            ciclosReloj++;
             System.out.println("Ciclo de reloj: " + ciclosReloj);
             if (hilo0 != null) {
                 System.out.println("Nucleo 0: Hilillo " + hilo0.idHilillo + ", Estado " + hilo0.getEstadoHilillo());
@@ -111,33 +118,31 @@ public class Procesador {
                 }
             }
 
-            barreraI.arriveAndAwaitAdvance();
-            ciclosReloj++;
 
             if (hilo0 != null && hilo0.getEstadoHilillo() == 0) { hilo0 = null; }
             if (hilo1 != null && hilo1.getEstadoHilillo() == 0) { hilo1 = null; }
 
-            /*if (hilo0 != null && hilo0.ciclosRelojHilillo > quantum) {
-                if (!colaIDs.isEmpty()) {
+            if (hilo0 != null && hilo0.ciclosRelojHilillo > quantum) {
+                /*if (!colaIDs.isEmpty()) {
                     hilo0.desregistrarHilillo();
                     System.arraycopy(hilo0.registro, 0, contexto[hilo0.idHilillo], 0, 32);
                     contexto[hilo0.idHilillo][32] = hilo0.pc;
                     colaIDs.add(hilo0.idHilillo);
 
                     hilo0 = null;
-                }
+                }*/
             }
 
             if (hilo1 != null && hilo1.ciclosRelojHilillo > quantum) {
-                if (!colaIDs.isEmpty()) {
+                /*if (!colaIDs.isEmpty()) {
                     hilo1.desregistrarHilillo();
                     System.arraycopy(hilo1.registro, 0, contexto[hilo1.idHilillo], 0, 32);
                     contexto[hilo1.idHilillo][32] = hilo1.pc;
                     colaIDs.add(hilo1.idHilillo);
 
                     hilo1 = null;
-                }
-            }*/
+                }*/
+            }
 
             if (hilo0 == null && hilo1 == null) {
                 if (colaIDs.isEmpty()) {
@@ -403,14 +408,16 @@ public class Procesador {
             if (copiaCache.valores[posCache][4] == bloque) {
                 if (copiaCache.valores[posCache][5] == 2) {
                     copiaCache.locks[posCache].tryLock();
+
                     try {
                         copiaCache.valores[posCache][palabra] = registros[registro];
                     } finally {
                         copiaCache.locks[posCache].unlock();
-                     }
+                    }
                 } else if (copiaCache.valores[posCache][5] == 1) {
                     if (!busD.isLocked()) {
                         busD.tryLock();
+
                         try {
                             if (!copiaOtraCache.reservado[posCache]) {
                                 copiaOtraCache.reservado[posCache] = true;
@@ -418,6 +425,7 @@ public class Procesador {
                                 if (copiaOtraCache.valores[posCache][4] == bloque) {
                                     if (copiaOtraCache.valores[posCache][5] == 0) {
                                         copiaCache.locks[posCache].tryLock();
+
                                         try {
                                             copiaCache.valores[posCache][palabra] = registros[registro];
                                         } finally {
@@ -426,6 +434,7 @@ public class Procesador {
                                     } else if (copiaOtraCache.valores[posCache][5] == 1) {
                                         copiaCache.locks[posCache].tryLock();
                                         copiaOtraCache.locks[posCache].tryLock();
+
                                         try {
                                             copiaOtraCache.valores[posCache][5] = 0;
                                             copiaCache.valores[posCache][palabra] = registros[registro];
@@ -448,10 +457,10 @@ public class Procesador {
             } else { //Fallo de caché
                 if (!busD.isLocked()) {
                     busD.tryLock();
+
                     try {
                         //Se revisa bloque victima
                         if (copiaCache.valores[posCache][5] == 2) {
-                            //Se debe reservar el bus
                             for (int i = 0; i < 40; i++) {
                                 barreraHilillo.arriveAndAwaitAdvance();
                                 ciclosHilillo++;
@@ -466,6 +475,7 @@ public class Procesador {
                                 if (copiaOtraCache.valores[posCache][5] == 2) {
                                     copiaOtraCache.locks[posCache].tryLock();
                                     copiaCache.locks[posCache].tryLock();
+
                                     try {
                                         for (int i = 0; i < 40; i++) {
                                             barreraHilillo.arriveAndAwaitAdvance();
@@ -482,6 +492,7 @@ public class Procesador {
                                     }
                                 } else {
                                     copiaCache.locks[posCache].tryLock();
+
                                     try {
                                         for (int i = 0; i < 40; i++) {
                                             barreraHilillo.arriveAndAwaitAdvance();
@@ -497,6 +508,7 @@ public class Procesador {
                                 }
                             } else {
                                 copiaCache.locks[posCache].tryLock();
+
                                 try {
                                     for (int i = 0; i < 40; i++) {
                                         barreraHilillo.arriveAndAwaitAdvance();
