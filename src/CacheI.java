@@ -1,11 +1,10 @@
+/** Clase que simula las caches de instrucciones de los nucleos. */
 class CacheI {
     public int[][] valores;
     public boolean[] reservado;
     public MyReentrantLock[] locks;
 
-    /**
-     * Constructor de cache de instrucciones.
-     */
+    /** Constructor de la clase. */
     CacheI() {
         valores = new int[4][18];
         locks = new MyReentrantLock[4];

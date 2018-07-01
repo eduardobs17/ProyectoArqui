@@ -1,44 +1,44 @@
 import java.util.concurrent.Phaser;
 
+/** Clase que simula y ejecuta las instrucciones de los hilillos. */
 public class Hilillo extends Thread {
     private Procesador procesador;
+    private Phaser barreraInicio;
     private int nucleo;
     private int estadoHilillo;
-    public int ciclosRelojHilillo;
-    private Phaser barreraInicio;
     private int[] IR;
-    private boolean hililloNuevo;
 
     public int[] registro;
     public int pc;
     public int idHilillo;
+    public int ciclosRelojHilillo;
 
     /**
-     * Constructor del hilillo.
-     * @param pNucleo Nucleo del hilillo.
-     * @param bi Barrera de inicio para que los hilillos inicien a la vez.
+     * Constructor de la clase.
+     * @param pNucleo Nucleo al que pertenece el hilillo.
+     * @param bi Barrera usada para la sincronizacion.
+     * @param id Identificado del hilillo.
+     * @param contextoHilillo Contexto del hilillo; es decir, sus registros y pc.
      */
-    Hilillo(int pNucleo, Phaser bi, int id, int[] contextoHilillo, boolean nuevo) {
+    Hilillo(int pNucleo, Phaser bi, int id, int[] contextoHilillo) {
         procesador = Procesador.getInstancia(1,1);
-        nucleo = pNucleo;
-        barreraInicio = bi;
-        idHilillo = id;
 
+        barreraInicio = bi;
         barreraInicio.register();
+
+        nucleo = pNucleo;
+        estadoHilillo = 1;
+        IR = new int[4];
 
         registro = new int[32];
         System.arraycopy(contextoHilillo, 0, registro, 0, 32);
         pc = contextoHilillo[32];
-
-        estadoHilillo = 1;
+        idHilillo = id;
         ciclosRelojHilillo = 0;
-        IR = new int[4];
-        hililloNuevo = nuevo;
     }
 
     /**
-     * Lo primero que hace cada hilillo es leer la primera instrucción. Una vez hecho, la ejecuta.
-     * Y asi hasta llegar al final del archivo o hasta que haya un fallo de cache.
+     * Método que ejecuta el hilillo. Carga instrucciones desde memoria, las lee y las ejecuta.
      */
     @Override
     public void run() {
@@ -82,18 +82,24 @@ public class Hilillo extends Thread {
         }
     }
 
-    /**
-     * Retorna el nucleo.
-     * @return Devuelve el nucleo del hilillo.
-     */
+    /** Retorna el nucleo al que pertenece el hilillo. */
     public int getNucleo() {
         return nucleo;
     }
 
+    /** Devuelve el estado del hilillo. */
     public int getEstadoHilillo() { return estadoHilillo; }
 
+    /** Devuelve la instancia de la barrera usada. */
     public Phaser getBarreraI() { return barreraInicio; }
 
+    /**
+     * Metodo que se llama cuando se va a realizar un cambio de contexto.
+     * Se elimina todos los campos que el hilillo reservó o registró.
+     * @param cacheI Cache de instrucciones.
+     * @param cacheD Cache de datos.
+     * @param hilo Hilillo que va a realizar el cambio de contexto.
+     */
     public void desregistrarHilillo(CacheI[] cacheI, CacheD[] cacheD, Hilillo hilo) {
         barreraInicio.arriveAndDeregister();
 

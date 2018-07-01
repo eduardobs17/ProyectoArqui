@@ -1,12 +1,10 @@
 import java.util.Queue;
 import java.util.concurrent.Phaser;
 
-/**
- * 0 = invalido
- * 1 = compartido
- * 2 = modificado
- */
+/** Clase que simula el procesador multinucleo de la maquina. */
 public class Procesador {
+    // 0 = invalido; 1 = compartido; 2 = modificado.
+
     private static Procesador procesador;
 
     private MemoriaPrincipal memoria;
@@ -25,8 +23,7 @@ public class Procesador {
     private MyReentrantLock busD = new MyReentrantLock();
 
     /**
-     * Constructor
-     * Se inicializa en ceros el contexto y las caches.
+     * Constructor de la clase. Se inicializan las vaiiables necesarias.
      * @param cant Cantidad de hilillos que se van a ejecutar.
      * @param tamQuantum Tamaño del quantum del hilillo.
      */
@@ -53,7 +50,7 @@ public class Procesador {
      * Metodo Singleton para controlar que solo se cree un objeto procesador.
      * @param cantH Cantidad de hilillos que se van a ejecutar.
      * @param tamQ Tamaño de quantum del hilillo.
-     * @return Devuelve el procesador si este ya existe.
+     * @return Devuelve la unica instancia de procesador.
      */
     public static Procesador getInstancia(int cantH, int tamQ) {
         if (procesador == null) {
@@ -72,22 +69,21 @@ public class Procesador {
 
     /**
      * Metodo que inicia el programa y manda a ejecutar los Hilillos.
-     * @param colaIDs cola con el PC de los hilos que se van a ejecutar.
-     * @param barreraI barreraInicio para manejar ciclo de reloj para que los hilillos inicien a la vez.
-     * @param modalidad Modalidad de ejecución, si es 0 el programa corre con normalidad,
-     *                  si es 1 se agregan delay de 1 segundo para que el programa se ejecute despacio.
+     * @param colaIDs cola con los identificadores de los hilillos.
+     * @param barreraI Barrera que permite controlar la sincronización entre hilos.
+     * @param modalidad Modalidad de ejecución.
      */
     public void run(Queue<Integer> colaIDs, Phaser barreraI, int modalidad) {
         while (true) {
             if (!colaIDs.isEmpty() && hilo0 == null) {
                 int id = colaIDs.poll();
-                hilo0 = new Hilillo(0, barreraI, id, contexto[id], true);
+                hilo0 = new Hilillo(0, barreraI, id, contexto[id]);
                 hilo0.setName("Hilo0");
                 hilo0.start();
             }
             if (!colaIDs.isEmpty() && hilo1 == null) {
                 int id = colaIDs.poll();
-                hilo1 = new Hilillo(1, barreraI, id, contexto[id], true);
+                hilo1 = new Hilillo(1, barreraI, id, contexto[id]);
                 hilo1.setName("Hilo1");
                 hilo1.start();
             }
@@ -139,7 +135,7 @@ public class Procesador {
                     hilo0 = null;
 
                     int id = colaIDs.poll();
-                    hilo0 = new Hilillo(0, barreraI, id, contexto[id], false);
+                    hilo0 = new Hilillo(0, barreraI, id, contexto[id]);
                     hilo0.setName("Hilo0");
                     hilo0.start();
                 }
@@ -156,7 +152,7 @@ public class Procesador {
                     hilo1 = null;
 
                     int id = colaIDs.poll();
-                    hilo1 = new Hilillo(1, barreraI, id, contexto[id], false);
+                    hilo1 = new Hilillo(1, barreraI, id, contexto[id]);
                     hilo1.setName("Hilo1");
                     hilo1.start();
                 }
@@ -171,10 +167,10 @@ public class Procesador {
     }
 
     /**
-     * Metodo que contiene la logica de las instrucciones.
+     * Metodo que ejecuta las instrucciones.
      * @param instruccion Es el IR (instruccion actual) del hilillo.
      * @param h Es el hilillo.
-     * @return Devuelve el PC del hilillo.
+     * @return Devuelve el estado de la instrucción: -1 si hay error, 0 en caso contrario.
      */
     public int ALU (int instruccion[], Hilillo h) {
         int y = instruccion[0];
@@ -231,11 +227,12 @@ public class Procesador {
     }
 
     /**
-     * Metodo para LoadD que carga datos de memoria a registro, toma en cuenta los fallos de cache.
+     * Metodo que carga datos desde memoria de datos y los guarda en los registros.
      * @param registro El numero de registro en el cual debe escribir.
-     * @param posMemoria Posicion de memoria del bloque.
+     * @param posMemoria Posicion de memoria que contiene el dato que se necesita..
      * @param nucleo Nucleo del hilillo.
-     * @param registros Los registros del hilillo.
+     * @param registros Registros del hilillo.
+     * @param h Hilillo que mando a ejecutar la instrucción.
      */
     private int loadD (int registro, int posMemoria, int nucleo, int[] registros, Hilillo h) {
         int bloque = posMemoria / 16;
@@ -403,11 +400,12 @@ public class Procesador {
     }
 
     /**
-     * Metodo StoreD para cargar datos de registro a memoria, toma en cuenta los fallos de cache.
-     * @param registro Registro desde el cual se va a escribir en memoria.
-     * @param posMemoria Posicion de memoria del bloque.
+     * Metodo que permite guardar datos en memoria de datos desde los registros.
+     * @param registro Registro desde el cual se va a escribir.
+     * @param posMemoria Posicion de memoria en donde se va a escribir.
      * @param nucleo Nucleo del hilillo.
-     * @param registros Los registros del hilillo.
+     * @param registros Registros del hilillo.
+     * @param h Hilillo que mando a ejecutar la instruccion.
      */
     private void storeD (int registro, int posMemoria, int nucleo, int[] registros, Hilillo h) {
         int bloque = posMemoria / 16;
@@ -552,11 +550,11 @@ public class Procesador {
     }
 
     /**
-     * Metodo LoadI para cargar las instrucciones de la memoria a la cache, toma en cuenta los fallos de cache.
+     * Metodo que permite cargar las instrucciones desde memoria.
      * @param nucleo Nucleo del hilillo.
-     * @param posCache Posicion en la cache.
-     * @param posMem PC del hilillo (posicion en memoria).
-     * @param h Es el hilillo.
+     * @param posCache Posicion en la cache del bloque de instrucciones.
+     * @param posMem PC del hilillo.
+     * @param h Hilillo.
      */
     public int loadI (int nucleo, int posCache, int posMem, Hilillo h) {
         int bloqueMem = posMem / 16;
@@ -619,8 +617,8 @@ public class Procesador {
     }
 
     /**
-     * Metodo para llenar el PC del hilillo en su propio contexto.
-     * @param fila El numero del hilillo.
+     * Metodo que llena el PC del hilillo en su contexto.
+     * @param fila Numero del hilillo.
      * @param pc PC del hilillo.
      */
     public void llenarContextopc(int fila, int pc) {
@@ -661,15 +659,15 @@ public class Procesador {
         cache.valores[posCache][5] = 1;
     }
 
+    /**
+     * Metodo que imprime los valores de los registros.
+     * @param h Identificador del hilillo cuyos registros se van a imprimir.
+     */
     public void imprimirRegistroHilo(int h) {
         String rh = "";
         for (int i = 0; i < 32; i++) {
             rh = rh + contexto[h][i] + "   ";
         }
         System.out.println(rh);
-    }
-
-    private boolean revisarQuantumHilillo(Hilillo h) {
-        return h.ciclosRelojHilillo > quantum;
     }
 }

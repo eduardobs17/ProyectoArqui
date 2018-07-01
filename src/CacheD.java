@@ -1,11 +1,10 @@
+/** Clase que simula las caches de datos de los nucleos. */
 class CacheD {
     public int[][] valores;
     public boolean[] reservado;
     public MyReentrantLock[] locks;
 
-    /**
-     * Constructor de cache de datos.
-     */
+    /** Constructor de la clase. */
     CacheD() {
         valores = new int[4][6];
         locks = new MyReentrantLock[4];
@@ -20,13 +19,14 @@ class CacheD {
         }
     }
 
+    /** Metodo que imprime los valores que hay en la cache. */
     public void imprimirCache() {
-        String cd = "";
+        StringBuilder cd = new StringBuilder();
         for(int i = 0; i < 4; i++) {
             for(int j = 0; j < 6; j++) {
-                cd = cd + valores[i][j] + "   ";
+                cd.append(valores[i][j]).append("   ");
             }
-            cd = cd + "\n";
+            cd.append("\n");
         }
         System.out.println(cd);
     }
