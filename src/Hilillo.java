@@ -92,7 +92,46 @@ public class Hilillo extends Thread {
 
     public Phaser getBarreraI() { return barreraInicio; }
 
-    public void desregistrarHilillo() {
+    public void desregistrarHililloM(MyReentrantLock busI, MyReentrantLock busD, CacheI[] cacheI, CacheD[] cacheD, Hilillo hilo) {
         barreraInicio.arriveAndDeregister();
+
+        long aux = busI.owner();
+
+        if (busI.owner() == hilo.getId()) {
+            busI.unlock();
+        }
+        if (busD.owner() == hilo.getId()) {
+            busD.unlock();
+        }
+        for (int x = 0; x < 4; x++) {
+            if (cacheI[0].locks[x].owner() == hilo.getId()) {
+                cacheI[0].locks[x].unlock();
+                cacheI[0].reservado[x] = false;
+            }
+            if (cacheI[1].locks[x].owner() == hilo.getId()) {
+                cacheI[1].locks[x].unlock();
+                cacheI[1].reservado[x] = false;
+            }
+
+            if (cacheD[0].locks[x].owner() == hilo.getId()) {
+                cacheD[0].locks[x].unlock();
+                cacheD[0].reservado[x] = false;
+            }
+            if (cacheD[1].locks[x].owner() == hilo.getId()) {
+                cacheD[1].locks[x].unlock();
+                cacheD[1].reservado[x] = false;
+            }
+        }
+
+        try {
+            this.join(1);
+        } catch (InterruptedException e) {
+            System.out.println("OLIS");
+            e.printStackTrace();
+        }
+    }
+
+    public void desregistrarHilillo() {
+        System.out.println("OLIS");
     }
 }
