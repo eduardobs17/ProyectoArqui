@@ -29,9 +29,8 @@ public class Main {
         Procesador procesador = Procesador.getInstancia(cantHilos, quantum);
         Queue<Integer> colaIDs = new ArrayDeque<>(cantHilos);
 
-        Phaser barreraInicio = new Phaser(), barreraFinal = new Phaser();
+        Phaser barreraInicio = new Phaser();
         barreraInicio.register();
-        barreraFinal.register();
 
         for (int i = 0; i < cantHilos; i++) {
             String rutaHilo = i + ".txt";
@@ -42,9 +41,9 @@ public class Main {
         }
 
         if (eleccion == "Rapida") {
-            procesador.run(colaIDs, barreraInicio, barreraFinal, 0);
+            procesador.run(colaIDs, barreraInicio, 0);
         } else {
-            procesador.run(colaIDs, barreraInicio, barreraFinal, 1);
+            procesador.run(colaIDs, barreraInicio, 1);
         }
 
         //IMPRIMIR CACHES

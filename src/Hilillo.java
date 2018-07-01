@@ -6,7 +6,6 @@ public class Hilillo extends Thread {
     private int estadoHilillo;
     public int ciclosRelojHilillo;
     private Phaser barreraInicio;
-    private Phaser barreraFinal;
     private int[] IR;
     private boolean hililloNuevo;
 
@@ -19,15 +18,13 @@ public class Hilillo extends Thread {
      * @param pNucleo Nucleo del hilillo.
      * @param bi Barrera de inicio para que los hilillos inicien a la vez.
      */
-    Hilillo(int pNucleo, Phaser bi, Phaser bf, int id, int[] contextoHilillo, boolean nuevo) {
+    Hilillo(int pNucleo, Phaser bi, int id, int[] contextoHilillo, boolean nuevo) {
         procesador = Procesador.getInstancia(1,1);
         nucleo = pNucleo;
         barreraInicio = bi;
-        barreraFinal = bf;
         idHilillo = id;
 
         barreraInicio.register();
-        barreraFinal.register();
 
         registro = new int[32];
         System.arraycopy(contextoHilillo, 0, registro, 0, 32);
@@ -45,10 +42,6 @@ public class Hilillo extends Thread {
      */
     @Override
     public void run() {
-        if (!hililloNuevo) {
-            barreraFinal.arriveAndAwaitAdvance();
-        }
-
         int bloque, posCacheI, numPalabra;
 
         while (estadoHilillo != 0) {
@@ -65,7 +58,6 @@ public class Hilillo extends Thread {
                     if (res == -1) {
                         barreraInicio.arriveAndAwaitAdvance();
                         ciclosRelojHilillo++;
-                        barreraFinal.arriveAndAwaitAdvance();
                     }
                 }
             }
@@ -83,11 +75,9 @@ public class Hilillo extends Thread {
             ciclosRelojHilillo++;
             if (estadoHilillo != 0) {
                 barreraInicio.arriveAndAwaitAdvance();
-                barreraFinal.arriveAndAwaitAdvance();
             } else {
                 System.arraycopy(registro, 0, procesador.contexto[idHilillo], 0, 32);
                 barreraInicio.arriveAndDeregister();
-                barreraFinal.arriveAndDeregister();
             }
         }
     }
@@ -104,11 +94,8 @@ public class Hilillo extends Thread {
 
     public Phaser getBarreraI() { return barreraInicio; }
 
-    public Phaser getBarreraF() { return barreraFinal; }
-
     public void desregistrarHilillo(CacheI[] cacheI, CacheD[] cacheD, Hilillo hilo) {
         barreraInicio.arriveAndDeregister();
-        barreraFinal.arriveAndDeregister();
 
         for (int x = 0; x < 4; x++) {
             if (cacheI[0].locks[x].owner() == hilo.getId()) {
@@ -124,12 +111,6 @@ public class Hilillo extends Thread {
             if (cacheD[1].locks[x].owner() == hilo.getId()) {
                 cacheD[1].reservado[x] = false;
             }
-        }
-
-        try {
-            this.join(1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 }
